@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-20 11:10:17
+ * @LastEditTime: 2024-03-20 15:58:43
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -21,20 +21,31 @@ export interface SWDefinitionCollections {
 }
 
 export interface GenerateOptions {
-  outDir: string,
-  include?: (string | RegExp)[],
-  exclude?: (string | RegExp)[],
-  match?: RegExp,
+  outDir: string;
+  include?: (string | RegExp)[];
+  exclude?: (string | RegExp)[];
+  match?: RegExp;
+}
+
+export interface GenerateDefinitionResult {
+  objName: string;
+  fileName: string;
+  filePath: string;
+  outDir: string;
 }
 
 /**
  * 生成类型定义文件
- * @param definitionKey 
- * @param definitionObj 
- * @param options 
- * @returns 
+ * @param definitionKey
+ * @param definitionObj
+ * @param options
+ * @returns
  */
-export function generateDefinitionFile(definitionKey: string, definitionObj: SWDefinitionObj,  options: GenerateOptions) {
+export function generateDefinitionFile(
+  definitionKey: string,
+  definitionObj: SWDefinitionObj,
+  options: GenerateOptions
+): GenerateDefinitionResult | undefined {
   // 对象名称
   const objName = formatObjName(definitionKey);
 
@@ -45,15 +56,20 @@ export function generateDefinitionFile(definitionKey: string, definitionObj: SWD
   if (
     !objName ||
     !properties ||
-    exclude?.some((item) => (item instanceof RegExp ? item.test(objName) : item === objName)) ||
-    (include && !include.some((item) => (item instanceof RegExp ? item.test(objName) : item === objName))) ||
-    (match && !match.test(objName))
+    exclude?.some((item) =>
+      item instanceof RegExp ? item.test(definitionKey) : item === objName
+    ) ||
+    (include &&
+      !include.some((item) =>
+        item instanceof RegExp ? item.test(definitionKey) : item === objName
+      )) ||
+    (match && !match.test(definitionKey))
   ) {
     return;
   }
 
   // 拼接代码
-  let codeStr = `export default interface ${objName} {\n`;
+  let codeStr = `export interface ${objName} {\n`;
   if (objDesc) {
     codeStr = `/** ${objDesc} */\n${codeStr}`;
   }
@@ -63,12 +79,18 @@ export function generateDefinitionFile(definitionKey: string, definitionObj: SWD
     // 定义属性
     const isRequired = required?.includes(propKey);
     const property = properties[propKey];
-    let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${parseToTsType(property)};\n`;
+    let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${parseToTsType(
+      property
+    )};\n`;
 
     // 添加注释
-    const descriptionComment = property.description ? ` ${property.description} ` : '';
-    const minComment = property.minLength != null ? ` 最小长度：${property.minLength} ` : '';
-    const maxComment = property.maxLength != null ? ` 最大长度：${property.maxLength} ` : '';
+    const descriptionComment = property.description
+      ? ` ${property.description} `
+      : '';
+    const minComment =
+      property.minLength != null ? ` 最小长度：${property.minLength} ` : '';
+    const maxComment =
+      property.maxLength != null ? ` 最大长度：${property.maxLength} ` : '';
     if (descriptionComment || minComment || maxComment) {
       const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
       propStr = `${comment}\n${propStr}`;
@@ -91,7 +113,59 @@ export function generateDefinitionFile(definitionKey: string, definitionObj: SWD
 
   console.log(`----- 已生成 ${filePath} -----`);
 
-  return { objName, fileName: objName, filePath };
+  return { objName, fileName: objName, filePath, outDir };
+}
+
+export function writeToDefsFile(result: GenerateDefinitionResult) {
+  /**
+   * 文件模板
+   * import { RepairWorkDetailVO } from './RepairWorkDetailVO';
+   *
+   * declare global {
+   *   namespace defs {
+   *     export {
+   *       RepairWorkDetailVO,
+   *     };
+   *   }
+   * }
+   */
+  const { objName, outDir } = result;
+
+  const defFilePath = path.join(outDir, 'defs.d.ts');
+  const importMark = '/* --- import --- */';
+  const exportMark = '/* --- export --- */';
+
+  // 新建
+  if (!fs.existsSync(defFilePath)) {
+    fs.writeFileSync(
+      defFilePath,
+      `import { ${objName} } from './${objName}';\n${importMark}\n` +
+        '\ndeclare global {\n  namespace defs {\n    export {\n' +
+        `      ${objName},\n` +
+        `      ${exportMark}\n` +
+        '    };\n  }\n}'
+    );
+
+    return defFilePath;
+  }
+
+  // 追加
+  let defFileContent = fs.readFileSync(defFilePath, 'utf-8');
+  
+  // 判断是否已经导入
+  if (defFileContent.indexOf(`import { ${objName} }`) === -1) {
+    defFileContent = defFileContent
+      .replace(
+        importMark,
+        `import { ${objName} } from './${objName}';\n${importMark}`
+      )
+      .replace(exportMark, `${objName},\n      ${exportMark}`);
+  
+    // 写入文件
+    fs.writeFileSync(defFilePath, defFileContent);
+  }
+
+  return defFilePath;
 }
 
 /**
@@ -99,7 +173,10 @@ export function generateDefinitionFile(definitionKey: string, definitionObj: SWD
  * @param {SWDefinitionCollections} definitions
  * @param {GenerateOptions} options
  */
-export function generateBatch(definitions: SWDefinitionCollections, options: GenerateOptions) {
+export function generateBatch(
+  definitions: SWDefinitionCollections,
+  options: GenerateOptions
+) {
   console.time('生成类型定义文件耗时');
 
   const definitionKeys = Object.keys(definitions);
@@ -112,6 +189,7 @@ export function generateBatch(definitions: SWDefinitionCollections, options: Gen
       definitionTotal++;
 
       // 写入到defs.d.ts文件
+      writeToDefsFile(result);
     }
   });
 

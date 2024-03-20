@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { formatObjName } from './utils';
 
 interface ApiParameter {
   in: 'body' | 'query' | 'path';
@@ -35,11 +36,22 @@ interface PathApi {
   }
 }
 
-interface ApiOptions {
-  outDir: string;
+interface ApiContext {
+  /** 默认取URL最后一段 */
+  name: string;
+  url: string;
+  method: string;
+  inType?: string;
+  outType?: string;
+  comment?: string;
 }
 
-function generate(paths: PathApi, options: ApiOptions) {
+interface ApiOptions {
+  outDir: string;
+  transform?: (apiContext: ApiContext) => string;
+}
+
+export function generateApiFile(paths: PathApi, options: ApiOptions) {
   const pathKeys = Object.keys(paths);
 
   pathKeys.forEach(url => {
@@ -56,7 +68,7 @@ function generate(paths: PathApi, options: ApiOptions) {
     // 目录名
     const dirName = urlSplitArr.join('/');
     
-    console.log('=======44444444=====', funcName, fileName, dirName);
+    console.log(`===== [url] ${url} =====`, funcName, fileName);
     // 创建目录
     const dirPath = path.join(options.outDir, dirName);
     if (!fs.existsSync(dirPath)) {
@@ -75,20 +87,31 @@ function generate(paths: PathApi, options: ApiOptions) {
 
     methodKeys.forEach(method => {
       const api = apiCollection[method];
-      let resRef = api.responses?.[200].schema?.$ref;
-      const resultType = resRef?.replace(/«/g, '<').replace(/»/g, '>').match(/<(.+)>/)?.[1].replace(/\W+/g, '');
 
+      // 入参
       // const param = api.parameters
-      const dataType = 'abb'
+      const inType = 'InType'
 
-      fs.appendFileSync(filePath, `
-        /**
-         * ${api.summary || ''}
-         */
-        export function ${funcName} (data: ${dataType}) {
-          return request<${resultType}>({ url: '${url}', data, method: '${method}' });
-        }
-      `);
+      // 出参
+      let resRef = api.responses?.[200].schema?.$ref;
+      const outType = resRef ? formatObjName(resRef) : 'any';
+
+      let apiFuncStr = '';
+
+      if (typeof options.transform === 'function') {
+        apiFuncStr = options.transform({ name: funcName, method, url, outType, comment: api.summary })
+      } else {
+        apiFuncStr = `
+          /**
+           * ${api.summary || ''}
+           */
+          export function ${funcName} (data: ${inType}) {
+            return request<defs.${outType}>({ url: '${url}', data, method: '${method}' });
+          }
+        `;
+      }
+
+      fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
     });
   });
 }
@@ -100,5 +123,3 @@ function generate(paths: PathApi, options: ApiOptions) {
 function upperFirstLatter(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
-
-export default generate;

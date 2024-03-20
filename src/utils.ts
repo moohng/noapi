@@ -37,7 +37,7 @@ export function parseToTsType(property: SWDefinitionProperty): string {
   // 对象引用
   if (property.$ref) {
     const name = formatObjName(property.$ref);
-    return name;
+    return `defs.${name}`;
   }
 
   // 基本类型

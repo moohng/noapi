@@ -1,19 +1,20 @@
 import path from 'path';
 import apiDocs from './apiDocs.json';
-import generateDefinitions from './generateDefinition';
-import generateApi from './generateApi';
+import bfmDocs from './bfmDocs.json';
+import { generateBatch } from './generateDefinition';
+// import generateApi from './generateApi';
 
-export {
-  generateDefinitions,
-  generateApi,
-}
+// export {
+//   generateDefinitions,
+//   generateApi,
+// }
 
-generateDefinitions(apiDocs.definitions, {
+generateBatch(bfmDocs.definitions, {
   outDir: path.resolve('definitions'),
-  exclude: ['VO', /^AMIS/],
+  exclude: ['VO', /^AMIS/, /AMISResponseDTO/, /PageBody/, /AMISListData/, /SelectOptionQuery对象/],
 });
 
 // @ts-ignore
-generateApi(apiDocs.paths, {
-  outDir: path.resolve('api'),
-});
+// generateApi(apiDocs.paths, {
+//   outDir: path.resolve('api'),
+// });
