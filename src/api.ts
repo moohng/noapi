@@ -50,7 +50,22 @@ interface ApiContext {
 
 interface ApiOptions {
   outDir: string;
+  /**
+   * 自定义生成api方法转换
+   */
   transform?: (apiContext: ApiContext) => string;
+  /**
+   * 生成api方法之前调用
+   * @param apiContext 
+   * @returns 
+   */
+  beforeFunc?: (apiContext: ApiContext) => string;
+  /**
+   * 生成api方法之后调用
+   * @param apiContext 
+   * @returns 
+   */
+  afterFunc?: (apiContext: ApiContext) => string;
 }
 
 export function generateApiFile(url: string, apiCollections: ApiCollections, options: ApiOptions) {
@@ -73,7 +88,6 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
-
 
   // 创建文件
   const filePath = path.join(dirPath, `${fileName}.ts`);
