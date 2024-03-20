@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-20 15:58:43
+ * @LastEditTime: 2024-03-20 17:49:50
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -47,15 +47,24 @@ export function generateDefinitionFile(
   options: GenerateOptions
 ): GenerateDefinitionResult | undefined {
   // 对象名称
-  const objName = formatObjName(definitionKey);
+  let objName = formatObjName(definitionKey);
+  // 去掉泛型（尖括号里面的类型）
+  const idx = objName.indexOf('<');
+  if (idx > -1) {
+    objName = objName.substring(0, idx);
+  }
 
   const { required, properties, description: objDesc } = definitionObj;
   const { outDir, include, exclude, match } = options;
+
+  const filePath = path.join(outDir, `${objName}.ts`);
 
   // 过滤一些不合法类型
   if (
     !objName ||
     !properties ||
+    /^[a-z]/.test(objName) ||
+    fs.existsSync(filePath) ||
     exclude?.some((item) =>
       item instanceof RegExp ? item.test(definitionKey) : item === objName
     ) ||
@@ -68,7 +77,7 @@ export function generateDefinitionFile(
     return;
   }
 
-  // 拼接代码
+  // 拼接代码 TODO:泛型处理
   let codeStr = `export interface ${objName} {\n`;
   if (objDesc) {
     codeStr = `/** ${objDesc} */\n${codeStr}`;
@@ -108,7 +117,6 @@ export function generateDefinitionFile(
   }
 
   // 生成文件
-  const filePath = path.join(outDir, `${objName}.ts`);
   fs.writeFileSync(filePath, codeStr);
 
   console.log(`----- 已生成 ${filePath} -----`);

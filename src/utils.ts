@@ -7,8 +7,8 @@
  */
 export function formatObjName(objName: string, keepOuter = false) {
   // 去掉包名 com.zmn.common.dto2.  、非法字符
-  let name = objName.replace(/.*(\.|\/)|\W+/g, '').replace(/«/g, '<').replace(/»/g, '>');
-  // 是否去掉最外层对象
+  let name = objName.replace(/\w+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>').replace(/[^0-9a-zA-Z<>]+/g, '');
+  // 是否保留最外层对象
   if (!keepOuter) {
     name = name.match(/<(.+)>/)?.[1] || name;
   }

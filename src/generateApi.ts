@@ -25,15 +25,17 @@ interface ApiResponse {
 
 type ApiMethod = 'get' | 'post';
 
+type ApiCollections = {
+  [key in ApiMethod]: {
+    tags?: string[];
+    summary?: string;
+    parameters?: ApiParameter[];
+    responses?: ApiResponse;
+  };
+};
+
 interface PathApi {
-  [key: string]: {
-    [x in ApiMethod]: {
-      tags?: string[];
-      summary?: string;
-      parameters?: ApiParameter[];
-      responses?: ApiResponse;
-    }
-  }
+  [key: string]: ApiCollections;
 }
 
 interface ApiContext {
@@ -51,68 +53,71 @@ interface ApiOptions {
   transform?: (apiContext: ApiContext) => string;
 }
 
-export function generateApiFile(paths: PathApi, options: ApiOptions) {
+export function generateApiFile(url: string, apiCollections: ApiCollections, options: ApiOptions) {
+  // 根据URL路径确定目录结构
+  const urlSplitArr = url.split('/');
+
+  // api函数名
+  let funcName = urlSplitArr.pop()!;
+  if (funcName.includes('{')) { // 过滤掉path参数
+    funcName = urlSplitArr.pop()!;
+  }
+  // 文件名
+  const fileName = urlSplitArr.pop()!;
+  // 目录名
+  const dirName = urlSplitArr.join('/');
+  
+  console.log(`===== [url] ${url} =====`, funcName, fileName);
+  // 创建目录
+  const dirPath = path.join(options.outDir, dirName);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+
+  // 创建文件
+  const filePath = path.join(dirPath, `${fileName}.ts`);
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, `import { request } from '@/utils/request';\n`);
+  }
+
+  const methodKeys = Object.keys(apiCollections) as unknown as ApiMethod[];
+
+  methodKeys.forEach(method => {
+    const api = apiCollections[method];
+
+    // 入参
+    // const param = api.parameters
+    const inType = 'InType'
+
+    // 出参
+    let resRef = api.responses?.[200].schema?.$ref;
+    const outType = resRef ? formatObjName(resRef) : 'any';
+
+    let apiFuncStr = '';
+
+    if (typeof options.transform === 'function') {
+      apiFuncStr = options.transform({ name: funcName, method, url, outType, comment: api.summary })
+    } else {
+      apiFuncStr = `
+        /**
+         * ${api.summary || ''}
+         */
+        export function ${funcName}(data: ${inType}) {
+          return request<defs.${outType}>({ url: '${url}', data, method: '${method}' });
+        }
+      `;
+    }
+
+    fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
+  });
+}
+
+export function generateBatch(paths: PathApi, options: ApiOptions) {
   const pathKeys = Object.keys(paths);
 
   pathKeys.forEach(url => {
-    // 根据URL路径确定目录结构
-    const urlSplitArr = url.split('/');
-
-    // api函数名
-    let funcName = urlSplitArr.pop()!;
-    if (funcName.includes('{')) { // 过滤掉path参数
-      funcName = urlSplitArr.pop()!;
-    }
-    // 文件名
-    const fileName = urlSplitArr.pop()!;
-    // 目录名
-    const dirName = urlSplitArr.join('/');
-    
-    console.log(`===== [url] ${url} =====`, funcName, fileName);
-    // 创建目录
-    const dirPath = path.join(options.outDir, dirName);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-
-    // 创建文件
-    const filePath = path.join(dirPath, `${fileName}.ts`);
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, `import { request } from '@/utils/request';\n`);
-    }
-
-    const apiCollection = paths[url];
-    const methodKeys = Object.keys(apiCollection) as unknown as ApiMethod[];
-
-    methodKeys.forEach(method => {
-      const api = apiCollection[method];
-
-      // 入参
-      // const param = api.parameters
-      const inType = 'InType'
-
-      // 出参
-      let resRef = api.responses?.[200].schema?.$ref;
-      const outType = resRef ? formatObjName(resRef) : 'any';
-
-      let apiFuncStr = '';
-
-      if (typeof options.transform === 'function') {
-        apiFuncStr = options.transform({ name: funcName, method, url, outType, comment: api.summary })
-      } else {
-        apiFuncStr = `
-          /**
-           * ${api.summary || ''}
-           */
-          export function ${funcName} (data: ${inType}) {
-            return request<defs.${outType}>({ url: '${url}', data, method: '${method}' });
-          }
-        `;
-      }
-
-      fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
-    });
+    generateApiFile(url, paths[url], options);
   });
 }
 
