@@ -1,3 +1,10 @@
+/*
+ * @Author: mohong@zmn.cn
+ * @Date: 2024-03-20 09:45:06
+ * @LastEditTime: 2024-03-21 09:48:49
+ * @LastEditors: mohong@zmn.cn
+ * @Description: 工具函数
+ */
 /**
  * 去掉后端对象名中的非法字符
  * 比如：com.zmn.common.dto2.ResponseDTO«List«ActivityListVO对象»»     ======>     List<ActivityListVO>
@@ -52,4 +59,12 @@ export function parseToTsType(property: SWDefinitionProperty): string {
   }
 
   return 'any';
+}
+
+/**
+ * 首字母大写
+ * @param str
+ */
+export function upperFirstLatter(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

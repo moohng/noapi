@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-20 17:49:50
+ * @LastEditTime: 2024-03-21 09:09:13
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -20,7 +20,7 @@ export interface SWDefinitionCollections {
   [key: string]: SWDefinitionObj;
 }
 
-export interface GenerateOptions {
+export interface GenerateDefinitionOptions {
   outDir: string;
   include?: (string | RegExp)[];
   exclude?: (string | RegExp)[];
@@ -44,7 +44,7 @@ export interface GenerateDefinitionResult {
 export function generateDefinitionFile(
   definitionKey: string,
   definitionObj: SWDefinitionObj,
-  options: GenerateOptions
+  options: GenerateDefinitionOptions
 ): GenerateDefinitionResult | undefined {
   // 对象名称
   let objName = formatObjName(definitionKey);
@@ -179,11 +179,11 @@ export function writeToDefsFile(result: GenerateDefinitionResult) {
 /**
  * 批量生成定义文件
  * @param {SWDefinitionCollections} definitions
- * @param {GenerateOptions} options
+ * @param {GenerateDefinitionOptions} options
  */
 export function generateBatch(
   definitions: SWDefinitionCollections,
-  options: GenerateOptions
+  options: GenerateDefinitionOptions
 ) {
   console.time('生成类型定义文件耗时');
 

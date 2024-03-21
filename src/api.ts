@@ -3,13 +3,15 @@ import fs from 'fs';
 import { formatObjName } from './utils';
 
 interface ApiParameter {
-  in: 'body' | 'query' | 'path';
+  /** 'body' | 'query' | 'path' */
+  in: string;
   name: string;
   type?: string;
   default?: any;
   description?: string;
   required?: boolean;
   schema?: {
+    [key: string]: any;
     '$ref'?: string;
   };
 }
@@ -25,16 +27,14 @@ interface ApiResponse {
 
 type ApiMethod = 'get' | 'post';
 
-type ApiCollections = {
-  [key in ApiMethod]: {
-    tags?: string[];
-    summary?: string;
-    parameters?: ApiParameter[];
-    responses?: ApiResponse;
-  };
-};
+type ApiCollections = Record<ApiMethod | string, {
+  tags?: string[];
+  summary?: string;
+  parameters?: ApiParameter[];
+  responses?: ApiResponse;
+}>;
 
-interface PathApi {
+export interface SWPathApiCollections {
   [key: string]: ApiCollections;
 }
 
@@ -48,8 +48,8 @@ interface ApiContext {
   comment?: string;
 }
 
-interface ApiOptions {
-  outDir: string;
+export interface ApiOptions {
+  outDir?: string;
   /**
    * 自定义生成api方法转换
    */
@@ -83,8 +83,8 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
   const dirName = urlSplitArr.join('/');
   
   console.log(`===== [url] ${url} =====`, funcName, fileName);
-  // 创建目录
-  const dirPath = path.join(options.outDir, dirName);
+  // 创建目录 TODO:默认输出目录待验证
+  const dirPath = path.join(options.outDir || path.resolve('src/api'), dirName);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
@@ -125,20 +125,14 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
 
     fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
   });
+
+  console.log(`===== [api filePath] ${filePath} =====`);
 }
 
-export function generateBatch(paths: PathApi, options: ApiOptions) {
+export function generateBatch(paths: SWPathApiCollections, options: ApiOptions) {
   const pathKeys = Object.keys(paths);
 
   pathKeys.forEach(url => {
     generateApiFile(url, paths[url], options);
   });
-}
-
-/**
- * 首字母大写
- * @param str
- */
-function upperFirstLatter(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
