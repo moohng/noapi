@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-21 16:24:08
+ * @LastEditTime: 2024-03-21 17:37:07
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -43,7 +43,7 @@ export interface GenerateDefinitionResult {
  */
 export function generateDefinitionFile(
   definitionKey: string,
-  definitionObj: SWDefinitionObj,
+  definitionCollections: SWDefinitionCollections,
   options: GenerateDefinitionOptions
 ): GenerateDefinitionResult | undefined {
   // 对象名称
@@ -54,7 +54,7 @@ export function generateDefinitionFile(
     objName = objName.substring(0, idx);
   }
 
-  const { required, properties, description: objDesc } = definitionObj;
+  const { required, properties, description: objDesc } = definitionCollections[definitionKey];
   const { outDir, include, exclude, match } = options;
 
   const filePath = path.join(outDir, `${objName}.ts`);
@@ -86,11 +86,21 @@ export function generateDefinitionFile(
   // 遍历属性
   Object.keys(properties).forEach((propKey) => {
     // 定义属性
-    const isRequired = required?.includes(propKey);
     const property = properties[propKey];
-    let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${parseToTsType(
-      property
-    )};\n`;
+
+    // 引用类型，递归生成
+    if (property.$ref || property.items?.$ref) {
+      const definitionKey = (property.$ref || property.items.$ref).replace('#/definitions/', '');
+      const result = generateDefinitionFile(definitionKey, definitionCollections, options);
+      if (result) {
+        writeToDefsFile(result);
+      }
+    }
+
+    const isRequired = required?.includes(propKey);
+    const tsType = parseToTsType(property);
+
+    let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
 
     // 添加注释
     const descriptionComment = property.description
@@ -190,7 +200,7 @@ export function generateBatch(
   const definitionKeys = Object.keys(definitions);
   let definitionTotal = 0;
   definitionKeys.forEach((objKey) => {
-    const result = generateDefinitionFile(objKey, definitions[objKey], options);
+    const result = generateDefinitionFile(objKey, definitions, options);
 
     if (result) {
       // 统计数量

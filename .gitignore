@@ -3,6 +3,7 @@ node_modules/
 dist/
 .history/
 api/
+model/
 definitions/
 
 # local env files

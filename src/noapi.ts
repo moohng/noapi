@@ -1,13 +1,13 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-03-21 10:04:06
+ * @LastEditTime: 2024-03-21 16:41:58
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
 import path from 'path';
-import { ApiOptions, SWPathApiCollections, generateBatch } from './core/api';
-import { GenerateDefinitionOptions, SWDefinitionCollections } from './core/definition';
+import { ApiOptions, SWPathApiCollections, generateApiFile, generateBatch } from './core/api';
+import { SWDefinitionCollections } from './core/definition';
 
 interface SWJson {
   swagger: string;
@@ -24,7 +24,6 @@ interface NoApiConfig extends ApiOptions {
   swJson?: SWJson;
   /** 是否覆盖：如果已存在URL对应的api函数，默认不新建（false）；为true时始终新建 */
   force?: boolean;
-  definition?: GenerateDefinitionOptions;
 }
 
 class NoApi {
@@ -49,6 +48,10 @@ class NoApi {
     return this.config.swJson?.definitions;
   }
 
+  /**
+   * 全量生成所有api函数（适用于：初始化、重构项目时）
+   * @returns 
+   */
   async auto() {
     // 获取数据
     if (this.config.swUrl) {
@@ -63,13 +66,20 @@ class NoApi {
       return;
     }
 
-    generateBatch(this.paths!, this.config);
+    generateBatch(this.paths!, this.definitions!, this.config);
   }
 
+  /**
+   * 根据URL生成api函数
+   * @param urls 
+   */
   generateByUrls(urls: string[]) {
     console.log('开始生成api函数...');
 
-    // generateBatch(this.config);
+    urls.forEach(url => {
+      const apiCollections = this.paths![url];
+      generateApiFile(url, apiCollections, this.definitions!, this.config);
+    });
   }
 
   async fetchDataSource() {}

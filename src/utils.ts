@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-03-21 09:48:49
+ * @LastEditTime: 2024-03-21 17:47:34
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -13,6 +13,7 @@
  * @param keepOuter
  */
 export function formatObjName(objName: string, keepOuter = false) {
+  console.log('=====222===', objName);
   // 去掉包名 com.zmn.common.dto2.  、非法字符
   let name = objName.replace(/\w+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>').replace(/[^0-9a-zA-Z<>]+/g, '');
   // 是否保留最外层对象
@@ -67,4 +68,12 @@ export function parseToTsType(property: SWDefinitionProperty): string {
  */
 export function upperFirstLatter(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * 是否是基本类型
+ * @param type
+ */
+export function isBaseType(type: string) {
+  return ['string', 'number', 'boolean', 'object', 'any', 'unknown'].includes(type);
 }

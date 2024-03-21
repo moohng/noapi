@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import { formatObjName } from '../utils';
+import { formatObjName, isBaseType } from '../utils';
+import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToDefsFile } from './definition';
 
 interface ApiParameter {
   /** 'body' | 'query' | 'path' */
@@ -66,9 +67,13 @@ export interface ApiOptions {
    * @returns 
    */
   afterFunc?: (apiContext: ApiContext) => string;
+  /**
+   * 类型定义配置
+   */
+  definition?: GenerateDefinitionOptions;
 }
 
-export function generateApiFile(url: string, apiCollections: ApiCollections, options: ApiOptions) {
+export function generateApiFile(url: string, apiCollections: ApiCollections, definitionCollections: SWDefinitionCollections, options: ApiOptions) {
   // 根据URL路径确定目录结构
   const urlSplitArr = url.split('/');
 
@@ -83,6 +88,7 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
   const dirName = urlSplitArr.join('/');
   
   console.log(`===== [url] ${url} =====`, funcName, fileName);
+
   // 创建目录 TODO:默认输出目录待验证
   const dirPath = path.join(options.outDir || path.resolve('src/api'), dirName);
   if (!fs.existsSync(dirPath)) {
@@ -106,8 +112,22 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
 
     // 出参
     let resRef = api.responses?.[200].schema?.$ref;
-    const outType = resRef ? formatObjName(resRef) : 'any';
 
+    // 生成类型定义文件
+    if (resRef) {
+      const definitionKey = resRef.replace('#/definitions/', '');
+      const result = generateDefinitionFile(definitionKey, definitionCollections, options.definition!);
+      if (result) {
+        writeToDefsFile(result);
+      }
+    }
+    
+    let outType = resRef ? formatObjName(resRef) : 'any';
+    if (!isBaseType(outType)) {
+      outType = `defs.${outType}`;
+    }
+
+    // 生成api函数
     let apiFuncStr = '';
 
     if (typeof options.transform === 'function') {
@@ -118,7 +138,7 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
          * ${api.summary || ''}
          */
         export function ${funcName}(data: ${inType}) {
-          return request<defs.${outType}>({ url: '${url}', data, method: '${method}' });
+          return request<${outType}>({ url: '${url}', data, method: '${method}' });
         }
       `;
     }
@@ -129,10 +149,10 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, opt
   console.log(`===== [api filePath] ${filePath} =====`);
 }
 
-export function generateBatch(paths: SWPathApiCollections, options: ApiOptions) {
+export function generateBatch(paths: SWPathApiCollections, definitionCollections: SWDefinitionCollections, options: ApiOptions) {
   const pathKeys = Object.keys(paths);
 
   pathKeys.forEach(url => {
-    generateApiFile(url, paths[url], options);
+    generateApiFile(url, paths[url], definitionCollections, options);
   });
 }
