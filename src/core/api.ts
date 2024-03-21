@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { formatObjName } from './utils';
+import { formatObjName } from '../utils';
 
 interface ApiParameter {
   /** 'body' | 'query' | 'path' */

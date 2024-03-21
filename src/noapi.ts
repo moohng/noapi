@@ -6,8 +6,8 @@
  * @Description: 入口函数
  */
 import path from 'path';
-import { ApiOptions, SWPathApiCollections, generateBatch } from './api';
-import { GenerateDefinitionOptions, SWDefinitionCollections } from './definition';
+import { ApiOptions, SWPathApiCollections, generateBatch } from './core/api';
+import { GenerateDefinitionOptions, SWDefinitionCollections } from './core/definition';
 
 interface SWJson {
   swagger: string;
