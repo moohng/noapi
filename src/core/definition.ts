@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-21 17:37:07
+ * @LastEditTime: 2024-03-22 13:47:25
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -64,7 +64,6 @@ export function generateDefinitionFile(
     !objName ||
     !properties ||
     /^[a-z]/.test(objName) ||
-    fs.existsSync(filePath) ||
     exclude?.some((item) =>
       item instanceof RegExp ? item.test(definitionKey) : item === objName
     ) ||
@@ -78,7 +77,7 @@ export function generateDefinitionFile(
   }
 
   // 拼接代码 TODO:泛型处理
-  let codeStr = `export interface ${objName} {\n`;
+  let codeStr = `export default interface ${objName} {\n`;
   if (objDesc) {
     codeStr = `/** ${objDesc} */\n${codeStr}`;
   }
@@ -93,7 +92,7 @@ export function generateDefinitionFile(
       const definitionKey = (property.$ref || property.items.$ref).replace('#/definitions/', '');
       const result = generateDefinitionFile(definitionKey, definitionCollections, options);
       if (result) {
-        writeToDefsFile(result);
+        writeToIndexFile(result);
       }
     }
 
@@ -134,7 +133,7 @@ export function generateDefinitionFile(
   return { objName, fileName: objName, filePath, outDir };
 }
 
-export function writeToDefsFile(result: GenerateDefinitionResult) {
+export function writeToIndexFile(result: GenerateDefinitionResult) {
   /**
    * 文件模板
    * import { RepairWorkDetailVO } from './RepairWorkDetailVO';
@@ -149,20 +148,21 @@ export function writeToDefsFile(result: GenerateDefinitionResult) {
    */
   const { objName, outDir } = result;
 
-  const defFilePath = path.join(outDir, 'defs.d.ts');
-  const importMark = '/* --- import --- */';
-  const exportMark = '/* --- export --- */';
+  const defFilePath = path.join(outDir, 'index.ts');
+  // const importMark = '/* --- import --- */';
+  // const exportMark = '/* --- export --- */';
 
   // 新建
   if (!fs.existsSync(defFilePath)) {
-    fs.writeFileSync(
-      defFilePath,
-      `import { ${objName} } from './${objName}';\n${importMark}\n` +
-        '\ndeclare global {\n  namespace defs {\n    export {\n' +
-        `      ${objName},\n` +
-        `      ${exportMark}\n` +
-        '    };\n  }\n}'
-    );
+    // fs.writeFileSync(
+    //   defFilePath,
+    //   `import { ${objName} } from './${objName}';\n${importMark}\n` +
+    //     '\ndeclare global {\n  namespace defs {\n    export {\n' +
+    //     `      ${objName},\n` +
+    //     `      ${exportMark}\n` +
+    //     '    };\n  }\n}'
+    // );
+    fs.writeFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
 
     return defFilePath;
   }
@@ -172,15 +172,17 @@ export function writeToDefsFile(result: GenerateDefinitionResult) {
   
   // 判断是否已经导入
   if (defFileContent.indexOf(`import { ${objName} }`) === -1) {
-    defFileContent = defFileContent
-      .replace(
-        importMark,
-        `import { ${objName} } from './${objName}';\n${importMark}`
-      )
-      .replace(exportMark, `${objName},\n      ${exportMark}`);
+    // defFileContent = defFileContent
+    //   .replace(
+    //     importMark,
+    //     `import { ${objName} } from './${objName}';\n${importMark}`
+    //   )
+    //   .replace(exportMark, `${objName},\n      ${exportMark}`);
   
-    // 写入文件
-    fs.writeFileSync(defFilePath, defFileContent);
+    // // 写入文件
+    // fs.writeFileSync(defFilePath, defFileContent);
+
+    fs.appendFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
   }
 
   return defFilePath;
@@ -207,7 +209,7 @@ export function generateBatch(
       definitionTotal++;
 
       // 写入到defs.d.ts文件
-      writeToDefsFile(result);
+      writeToIndexFile(result);
     }
   });
 

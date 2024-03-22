@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import { formatObjName, isBaseType } from '../utils';
-import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToDefsFile } from './definition';
+import { defPrefix, formatObjName, isBaseType } from '../utils';
+import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToIndexFile } from './definition';
 
 interface ApiParameter {
   /** 'body' | 'query' | 'path' */
@@ -98,7 +98,7 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
   // 创建文件
   const filePath = path.join(dirPath, `${fileName}.ts`);
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, `import { request } from '@/utils/request';\n`);
+    fs.writeFileSync(filePath, `import { request } from '@/utils/request';\nimport * as models from '@/model'`);
   }
 
   const methodKeys = Object.keys(apiCollections) as unknown as ApiMethod[];
@@ -118,14 +118,13 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
       const definitionKey = resRef.replace('#/definitions/', '');
       const result = generateDefinitionFile(definitionKey, definitionCollections, options.definition!);
       if (result) {
-        writeToDefsFile(result);
+        writeToIndexFile(result);
       }
     }
     
     let outType = resRef ? formatObjName(resRef) : 'any';
-    if (!isBaseType(outType)) {
-      outType = `defs.${outType}`;
-    }
+    // 处理泛型前缀
+    outType = defPrefix(outType);
 
     // 生成api函数
     let apiFuncStr = '';

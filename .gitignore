@@ -2,8 +2,7 @@
 node_modules/
 dist/
 .history/
-api/
-model/
+testOutput/
 definitions/
 
 # local env files

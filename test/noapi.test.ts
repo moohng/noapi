@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:35
- * @LastEditTime: 2024-03-21 17:50:24
+ * @LastEditTime: 2024-03-22 17:17:48
  * @LastEditors: mohong@zmn.cn
  * @Description: 类方法测试
  */
@@ -12,9 +12,9 @@ import { createNoApi } from '../src/noapi';
 test('noapi', () => {
   const noapi = createNoApi({
     swJson: bfmDocs,
-    outDir: path.resolve('src/api'),
+    outDir: path.resolve('testOutput/api'),
     definition: {
-      outDir: path.resolve('src/model'),
+      outDir: path.resolve('testOutput/model'),
       // exclude: ['VO', /AMISResponseDTO/, /PageBody/, /SelectOptionQuery对象/],
     },
   });

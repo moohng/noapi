@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-03-21 17:47:34
+ * @LastEditTime: 2024-03-22 14:02:43
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -76,4 +76,14 @@ export function upperFirstLatter(str: string) {
  */
 export function isBaseType(type: string) {
   return ['string', 'number', 'boolean', 'object', 'any', 'unknown'].includes(type);
+}
+
+/**
+ * 对类型添加命名空间前缀，比如：AMISList<WorkItem> ===> defs.AMISList<defs.WorkItem>
+ * @param type 
+ */
+export function defPrefix(type: string) {
+  return isBaseType(type) ? type : type.replace(/\w+/g, (match) => {
+    return isBaseType(match) ? match : `defs.${match}`;
+  });
 }
