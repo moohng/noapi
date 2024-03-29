@@ -1,13 +1,13 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-22 13:47:25
+ * @LastEditTime: 2024-03-29 15:01:25
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
 import fs from 'fs';
 import path from 'path';
-import { formatObjName, parseToTsType } from '../utils';
+import { formatObjName, parseToTsType } from '../utils.js';
 
 export interface SWDefinitionObj {
   required?: string[];

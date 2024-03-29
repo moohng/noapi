@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import { defPrefix, formatObjName, isBaseType } from '../utils';
-import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToIndexFile } from './definition';
+import { defPrefix, formatObjName, isBaseType } from '../utils.js';
+import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToIndexFile } from './definition.js';
 
 interface ApiParameter {
   /** 'body' | 'query' | 'path' */
