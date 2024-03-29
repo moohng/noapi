@@ -11,12 +11,14 @@ program
 program
   .command('run [docsUrl] [outDir]', { isDefault: true })
   .option('-u, --urls <urls>', '指定生成api的url，以逗号分隔')
+  .option('-c, --cookie <cookie>', 'url的授权cookie')
   .description('生成api函数，必须提供一个swagger文档地址')
   .action(async (docsUrl, outDir, options) => {
     console.log('开始运行...', docsUrl, outDir, options);
 
     const noapi = createNoApi({
       swUrl: docsUrl,
+      cookie: options.cookie,
       outDir: path.resolve(outDir),
       definition: {
         outDir: path.resolve('testOutput/model'),

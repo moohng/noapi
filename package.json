@@ -2,7 +2,7 @@
   "name": "noapi",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/cli.js",
+  "main": "lib/noapi.js",
   "types": "lib/noapi.d.ts",
   "type": "module",
   "bin": {

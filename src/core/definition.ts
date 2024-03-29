@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-29 15:01:25
+ * @LastEditTime: 2024-03-29 17:50:58
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -33,6 +33,8 @@ export interface GenerateDefinitionResult {
   filePath: string;
   outDir: string;
 }
+
+const GENERIC_TYPE_NAMES = ['T', 'K', 'U', 'V'];
 
 /**
  * 生成类型定义文件
@@ -82,22 +84,31 @@ export function generateDefinitionFile(
     codeStr = `/** ${objDesc} */\n${codeStr}`;
   }
 
+  let genericIndex = 0;
+  const genericTypes: string[] = [];
+
   // 遍历属性
   Object.keys(properties).forEach((propKey) => {
     // 定义属性
     const property = properties[propKey];
 
+    let tsType;
+
     // 引用类型，递归生成
-    if (property.$ref || property.items?.$ref) {
+    const hasRef = property.$ref || property.items?.$ref;
+    if (hasRef) {
       const definitionKey = (property.$ref || property.items.$ref).replace('#/definitions/', '');
       const result = generateDefinitionFile(definitionKey, definitionCollections, options);
       if (result) {
         writeToIndexFile(result);
       }
+      tsType = GENERIC_TYPE_NAMES[genericIndex++];
+      genericTypes.push(tsType);
+    } else {
+      tsType = parseToTsType(property);
     }
 
     const isRequired = required?.includes(propKey);
-    const tsType = parseToTsType(property);
 
     let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
 
@@ -119,6 +130,11 @@ export function generateDefinitionFile(
   });
 
   codeStr += '}\n';
+
+  // 是否有泛型
+  if (genericTypes.length > 0) {
+    codeStr = codeStr.replace(`interface ${objName}`, `interface ${objName}<${genericTypes.join(', ')}>`);
+  }
 
   // 创建输出目录
   if (!fs.existsSync(outDir)) {

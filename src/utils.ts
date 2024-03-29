@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-03-22 14:02:43
+ * @LastEditTime: 2024-03-29 17:54:09
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -13,7 +13,6 @@
  * @param keepOuter
  */
 export function formatObjName(objName: string, keepOuter = false) {
-  console.log('=====222===', objName);
   // 去掉包名 com.zmn.common.dto2.  、非法字符
   let name = objName.replace(/\w+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>').replace(/[^0-9a-zA-Z<>]+/g, '');
   // 是否保留最外层对象
@@ -79,11 +78,11 @@ export function isBaseType(type: string) {
 }
 
 /**
- * 对类型添加命名空间前缀，比如：AMISList<WorkItem> ===> defs.AMISList<defs.WorkItem>
+ * 对类型添加命名空间前缀，比如：AMISList<WorkItem> ===> models.AMISList<models.WorkItem>
  * @param type 
  */
 export function defPrefix(type: string) {
   return isBaseType(type) ? type : type.replace(/\w+/g, (match) => {
-    return isBaseType(match) ? match : `defs.${match}`;
+    return isBaseType(match) ? match : `models.${match}`;
   });
 }
