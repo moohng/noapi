@@ -1,21 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import { defPrefix, formatObjName, isBaseType } from '../utils.js';
-import { GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, writeToIndexFile } from './definition.js';
-
-interface ApiParameter {
-  /** 'body' | 'query' | 'path' */
-  in: string;
-  name: string;
-  type?: string;
-  default?: any;
-  description?: string;
-  required?: boolean;
-  schema?: {
-    [key: string]: any;
-    '$ref'?: string;
-  };
-}
+import { defPrefix, formatObjName } from '../utils.js';
+import { ApiParameter, GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, generateQueryFile, writeToIndexFile } from './definition.js';
 
 interface ApiResponse {
   200: {
@@ -106,9 +92,10 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
   methodKeys.forEach(method => {
     const api = apiCollections[method];
 
-    // 入参
-    // const param = api.parameters
-    const inType = 'InType'
+    const inResult = api.parameters ? generateQueryFile(api.parameters, definitionCollections, options.definition!) : undefined;
+    if (inResult) {
+      writeToIndexFile(inResult);
+    }
 
     // 出参
     let resRef = api.responses?.[200].schema?.$ref;
@@ -132,11 +119,12 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
     if (typeof options.transform === 'function') {
       apiFuncStr = options.transform({ name: funcName, method, url, outType, comment: api.summary })
     } else {
+      const paramStr = inResult?.objName ? `data: ${defPrefix(inResult.objName)}` : '';
       apiFuncStr = `
         /**
          * ${api.summary || ''}
          */
-        export function ${funcName}(data: ${inType}) {
+        export function ${funcName}(${paramStr}) {
           return request<${outType}>({ url: '${url}', data, method: '${method}' });
         }
       `;

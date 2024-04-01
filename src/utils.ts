@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-03-29 17:54:09
+ * @LastEditTime: 2024-04-01 16:04:02
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -44,7 +44,7 @@ export function parseToTsType(property: SWDefinitionProperty): string {
   // 对象引用
   if (property.$ref) {
     const name = formatObjName(property.$ref);
-    return `defs.${name}`;
+    return `models.${name}`;
   }
 
   // 基本类型

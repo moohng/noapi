@@ -28,7 +28,7 @@ program
 
     // noapi.fetchDataSource();
   
-    await noapi.generateByUrls(['/bfm-crp/base/engineer/listServSkill', '/bfm-crp/base/engineer/modifySkill']);
+    await noapi.generateByUrls(['/bfm-crp/base/engineer/listServSkill', '/bfm-crp/base/engineer/modifySkill', '/bfm-crp/base/engineer/addEngineerSkills']);
   });
 
 program.parse(process.argv);

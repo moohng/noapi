@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-03-29 17:50:58
+ * @LastEditTime: 2024-04-01 16:03:44
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -84,7 +84,8 @@ export function generateDefinitionFile(
     codeStr = `/** ${objDesc} */\n${codeStr}`;
   }
 
-  let genericIndex = 0;
+  let genericIndex = -1;
+  const refList: string[] = [];
   const genericTypes: string[] = [];
 
   // 遍历属性
@@ -97,13 +98,23 @@ export function generateDefinitionFile(
     // 引用类型，递归生成
     const hasRef = property.$ref || property.items?.$ref;
     if (hasRef) {
-      const definitionKey = (property.$ref || property.items.$ref).replace('#/definitions/', '');
-      const result = generateDefinitionFile(definitionKey, definitionCollections, options);
-      if (result) {
-        writeToIndexFile(result);
+      const subDefinitionKey = hasRef.replace('#/definitions/', '');
+      if (definitionKey === subDefinitionKey) {
+        tsType = parseToTsType(property).replace('models.', '');
+      } else {
+        const result = definitionKey !== subDefinitionKey ? generateDefinitionFile(subDefinitionKey, definitionCollections, options) : undefined;
+        if (result) {
+          writeToIndexFile(result);
+        }
+        if (!refList.includes(hasRef)) {
+          refList.push(hasRef);
+          tsType = GENERIC_TYPE_NAMES[++genericIndex];
+          genericTypes.push(tsType);
+        } else {
+          tsType = GENERIC_TYPE_NAMES[genericIndex];
+        }
+        tsType +=  property.items?.$ref ? '[]' : '';
       }
-      tsType = GENERIC_TYPE_NAMES[genericIndex++];
-      genericTypes.push(tsType);
     } else {
       tsType = parseToTsType(property);
     }
@@ -147,6 +158,69 @@ export function generateDefinitionFile(
   console.log(`----- 已生成 ${filePath} -----`);
 
   return { objName, fileName: objName, filePath, outDir };
+}
+
+export interface ApiParameter {
+  /** 'body' | 'query' | 'path' */
+  in: string;
+  name: string;
+  type?: string;
+  default?: any;
+  description?: string;
+  required?: boolean;
+  schema?: {
+    [key: string]: any;
+    '$ref'?: string;
+  };
+}
+
+export function generateQueryFile(params: ApiParameter[], definitionCollections: SWDefinitionCollections, options: GenerateDefinitionOptions): GenerateDefinitionResult | undefined {
+  // 入参
+  // "parameters": [
+  //   {
+  //     "name": "sign",
+  //     "in": "path",
+  //     "description": "sign",
+  //     "required": true,
+  //     "type": "string"
+  //   }
+  // ],
+  // {
+  //   "name": "categMatterId",
+  //   "in": "query",
+  //   "description": "categMatterId",
+  //   "required": false,
+  //   "type": "integer",
+  //   "default": 0,
+  //   "format": "int32"
+  // },
+  // "parameters": [
+  //   {
+  //     "in": "body",
+  //     "name": "modifyDIO",
+  //     "description": "modifyDIO",
+  //     "required": true,
+  //     "schema": {
+  //       "$ref": "#/definitions/CrpCooperationModifyDIO对象"
+  //     }
+  //   }
+  // ],
+  const queryParams = params.filter((item) => item.in === 'query');
+  if (queryParams.length > 0) {
+    // 生成query类型
+  }
+
+  const pathParams = params.filter((item) => item.in === 'path');
+  if (pathParams.length > 0) {
+    // 生成path类型
+  }
+
+  const bodyParams = params.filter((item) => item.in === 'body');
+  if (bodyParams.length > 0) {
+    // 生成body类型
+    const definitionKey = bodyParams[0].schema?.$ref?.replace('#/definitions/', '');
+    return definitionKey ? generateDefinitionFile(definitionKey, definitionCollections, options) : undefined;
+  }
 }
 
 export function writeToIndexFile(result: GenerateDefinitionResult) {
