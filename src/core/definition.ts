@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-01 16:03:44
+ * @LastEditTime: 2024-04-01 16:09:33
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -155,7 +155,7 @@ export function generateDefinitionFile(
   // 生成文件
   fs.writeFileSync(filePath, codeStr);
 
-  console.log(`----- 已生成 ${filePath} -----`);
+  console.log('===== [model]', filePath);
 
   return { objName, fileName: objName, filePath, outDir };
 }
@@ -303,6 +303,6 @@ export function generateBatch(
     }
   });
 
-  console.log(`----- 类型定义文件生成完毕，共：${definitionTotal} 个 -----`);
+  console.log(`===== 类型定义文件生成完毕，共：${definitionTotal} 个`);
   console.timeEnd('生成类型定义文件耗时');
 }

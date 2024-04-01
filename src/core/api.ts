@@ -73,7 +73,7 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
   // 目录名
   const dirName = urlSplitArr.join('/');
   
-  console.log(`===== [url] ${url} =====`, funcName, fileName);
+  console.log('===== [url]', url, funcName, fileName);
 
   // 创建目录 TODO:默认输出目录待验证
   const dirPath = path.join(options.outDir || path.resolve('src/api'), dirName);
@@ -133,7 +133,7 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
     fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
   });
 
-  console.log(`===== [api filePath] ${filePath} =====`);
+  console.log('===== [api]', filePath, '\n');
 }
 
 export function generateBatch(paths: SWPathApiCollections, definitionCollections: SWDefinitionCollections, options: ApiOptions) {
