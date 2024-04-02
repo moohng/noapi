@@ -1,25 +1,35 @@
 import path from 'path';
 import fs from 'fs';
 import { defPrefix, formatObjName } from '../utils.js';
-import { ApiParameter, GenerateDefinitionOptions, SWDefinitionCollections, generateDefinitionFile, generateQueryFile, writeToIndexFile } from './definition.js';
+import {
+  ApiParameter,
+  GenerateDefinitionOptions,
+  SWDefinitionCollections,
+  generateDefinitionFile,
+  generateQueryFile,
+  writeToIndexFile,
+} from './definition.js';
 
 interface ApiResponse {
   200: {
     description?: string;
     schema?: {
-      '$ref'?: string;
-    }
-  }
+      $ref?: string;
+    };
+  };
 }
 
 type ApiMethod = 'get' | 'post';
 
-type ApiCollections = Record<ApiMethod | string, {
-  tags?: string[];
-  summary?: string;
-  parameters?: ApiParameter[];
-  responses?: ApiResponse;
-}>;
+type ApiCollections = Record<
+  ApiMethod | string,
+  {
+    tags?: string[];
+    summary?: string;
+    parameters?: ApiParameter[];
+    responses?: ApiResponse;
+  }
+>;
 
 export interface SWPathApiCollections {
   [key: string]: ApiCollections;
@@ -38,19 +48,23 @@ interface ApiContext {
 export interface ApiOptions {
   outDir?: string;
   /**
+   * 文件头部信息，import 信息
+   */
+  fileHeader?: string;
+  /**
    * 自定义生成api方法转换
    */
   transform?: (apiContext: ApiContext) => string;
   /**
    * 生成api方法之前调用
-   * @param apiContext 
-   * @returns 
+   * @param apiContext
+   * @returns
    */
   beforeFunc?: (apiContext: ApiContext) => string;
   /**
    * 生成api方法之后调用
-   * @param apiContext 
-   * @returns 
+   * @param apiContext
+   * @returns
    */
   afterFunc?: (apiContext: ApiContext) => string;
   /**
@@ -59,20 +73,26 @@ export interface ApiOptions {
   definition?: GenerateDefinitionOptions;
 }
 
-export function generateApiFile(url: string, apiCollections: ApiCollections, definitionCollections: SWDefinitionCollections, options: ApiOptions) {
+export function generateApiFile(
+  url: string,
+  apiCollections: ApiCollections,
+  definitionCollections: SWDefinitionCollections,
+  options: ApiOptions
+) {
   // 根据URL路径确定目录结构
   const urlSplitArr = url.split('/');
 
   // api函数名
   let funcName = urlSplitArr.pop()!;
-  if (funcName.includes('{')) { // 过滤掉path参数
+  if (funcName.includes('{')) {
+    // 过滤掉path参数
     funcName = urlSplitArr.pop()!;
   }
   // 文件名
   const fileName = urlSplitArr.pop()!;
   // 目录名
   const dirName = urlSplitArr.join('/');
-  
+
   console.log('===== [url]', url, funcName, fileName);
 
   // 创建目录 TODO:默认输出目录待验证
@@ -84,15 +104,24 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
   // 创建文件
   const filePath = path.join(dirPath, `${fileName}.ts`);
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, `import { request } from '@/utils/request';\nimport * as models from '@/model'`);
+    const importHeader =
+      options.fileHeader ||
+      `import { request } from '@/utils/request';\nimport * as models from '@/model';\n`;
+    fs.writeFileSync(filePath, importHeader);
   }
 
   const methodKeys = Object.keys(apiCollections) as unknown as ApiMethod[];
 
-  methodKeys.forEach(method => {
+  methodKeys.forEach((method) => {
     const api = apiCollections[method];
 
-    const inResult = api.parameters ? generateQueryFile(api.parameters, definitionCollections, options.definition!) : undefined;
+    const inResult = api.parameters
+      ? generateQueryFile(
+          api.parameters,
+          definitionCollections,
+          options.definition!
+        )
+      : undefined;
     if (inResult) {
       writeToIndexFile(inResult);
     }
@@ -103,12 +132,16 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
     // 生成类型定义文件
     if (resRef) {
       const definitionKey = resRef.replace('#/definitions/', '');
-      const result = generateDefinitionFile(definitionKey, definitionCollections, options.definition!);
+      const result = generateDefinitionFile(
+        definitionKey,
+        definitionCollections,
+        options.definition!
+      );
       if (result) {
         writeToIndexFile(result);
       }
     }
-    
+
     let outType = resRef ? formatObjName(resRef) : 'any';
     // 处理泛型前缀
     outType = defPrefix(outType);
@@ -117,9 +150,18 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
     let apiFuncStr = '';
 
     if (typeof options.transform === 'function') {
-      apiFuncStr = options.transform({ name: funcName, method, url, outType, comment: api.summary })
+      apiFuncStr = options.transform({
+        name: funcName,
+        method,
+        url,
+        inType: inResult?.objName && defPrefix(inResult?.objName),
+        outType,
+        comment: api.summary,
+      });
     } else {
-      const paramStr = inResult?.objName ? `data: ${defPrefix(inResult.objName)}` : '';
+      const paramStr = inResult?.objName
+        ? `data: ${defPrefix(inResult.objName)}`
+        : '';
       apiFuncStr = `
         /**
          * ${api.summary || ''}
@@ -136,10 +178,14 @@ export function generateApiFile(url: string, apiCollections: ApiCollections, def
   console.log('===== [api]', filePath, '\n');
 }
 
-export function generateBatch(paths: SWPathApiCollections, definitionCollections: SWDefinitionCollections, options: ApiOptions) {
+export function generateBatch(
+  paths: SWPathApiCollections,
+  definitionCollections: SWDefinitionCollections,
+  options: ApiOptions
+) {
   const pathKeys = Object.keys(paths);
 
-  pathKeys.forEach(url => {
+  pathKeys.forEach((url) => {
     generateApiFile(url, paths[url], definitionCollections, options);
   });
 }

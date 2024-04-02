@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-01 16:09:33
+ * @LastEditTime: 2024-04-02 14:40:56
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -261,7 +261,7 @@ export function writeToIndexFile(result: GenerateDefinitionResult) {
   let defFileContent = fs.readFileSync(defFilePath, 'utf-8');
   
   // 判断是否已经导入
-  if (defFileContent.indexOf(`import { ${objName} }`) === -1) {
+  if (defFileContent.indexOf(objName) === -1) {
     // defFileContent = defFileContent
     //   .replace(
     //     importMark,

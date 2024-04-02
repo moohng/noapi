@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-03-29 17:34:15
+ * @LastEditTime: 2024-04-02 14:56:03
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -110,4 +110,13 @@ class NoApi {
 
 export function createNoApi(config: NoApiConfig) {
   return new NoApi(config);
+}
+
+/**
+ * 定义配置
+ * @param config 
+ * @returns 
+ */
+export function definedNoApiConfig(config: NoApiConfig) {
+  return config;
 }
