@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-02 14:40:56
+ * @LastEditTime: 2024-04-07 14:53:10
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -48,15 +48,26 @@ export function generateDefinitionFile(
   definitionCollections: SWDefinitionCollections,
   options: GenerateDefinitionOptions
 ): GenerateDefinitionResult | undefined {
+  const keepOuter = false;
+  if (!keepOuter) {
+    definitionKey = definitionKey.match(/«(.+)»/)?.[1] || definitionKey;
+  }
+
+  // 忽略一些类型：List等
+  ['List'].forEach(ignoreType => {
+    definitionKey = definitionKey.match(new RegExp(`${ignoreType}«(.+)»`))?.[1] || definitionKey;
+  });
+
   // 对象名称
   let objName = formatObjName(definitionKey);
+
   // 去掉泛型（尖括号里面的类型）
   const idx = objName.indexOf('<');
   if (idx > -1) {
     objName = objName.substring(0, idx);
   }
 
-  const { required, properties, description: objDesc } = definitionCollections[definitionKey];
+  const { required, properties, description: objDesc } = definitionCollections[definitionKey] || {};
   const { outDir, include, exclude, match } = options;
 
   const filePath = path.join(outDir, `${objName}.ts`);
@@ -78,7 +89,7 @@ export function generateDefinitionFile(
     return;
   }
 
-  // 拼接代码 TODO:泛型处理
+  // 拼接代码
   let codeStr = `export default interface ${objName} {\n`;
   if (objDesc) {
     codeStr = `/** ${objDesc} */\n${codeStr}`;
@@ -102,10 +113,10 @@ export function generateDefinitionFile(
       if (definitionKey === subDefinitionKey) {
         tsType = parseToTsType(property).replace('models.', '');
       } else {
-        const result = definitionKey !== subDefinitionKey ? generateDefinitionFile(subDefinitionKey, definitionCollections, options) : undefined;
-        if (result) {
-          writeToIndexFile(result);
+        if (definitionKey !== subDefinitionKey) {
+          generateDefinitionFile(subDefinitionKey, definitionCollections, options)
         }
+
         if (!refList.includes(hasRef)) {
           refList.push(hasRef);
           tsType = GENERIC_TYPE_NAMES[++genericIndex];
@@ -156,6 +167,9 @@ export function generateDefinitionFile(
   fs.writeFileSync(filePath, codeStr);
 
   console.log('===== [model]', filePath);
+
+  // 写入Index文件
+  writeToIndexFile(objName, outDir);
 
   return { objName, fileName: objName, filePath, outDir };
 }
@@ -223,7 +237,7 @@ export function generateQueryFile(params: ApiParameter[], definitionCollections:
   }
 }
 
-export function writeToIndexFile(result: GenerateDefinitionResult) {
+export function writeToIndexFile(objName: string, outDir: string) {
   /**
    * 文件模板
    * import { RepairWorkDetailVO } from './RepairWorkDetailVO';
@@ -236,7 +250,6 @@ export function writeToIndexFile(result: GenerateDefinitionResult) {
    *   }
    * }
    */
-  const { objName, outDir } = result;
 
   const defFilePath = path.join(outDir, 'index.ts');
   // const importMark = '/* --- import --- */';
@@ -299,7 +312,7 @@ export function generateBatch(
       definitionTotal++;
 
       // 写入到defs.d.ts文件
-      writeToIndexFile(result);
+      writeToIndexFile(result.objName, result.outDir);
     }
   });
 

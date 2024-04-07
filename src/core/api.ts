@@ -73,27 +73,45 @@ export interface ApiOptions {
   definition?: GenerateDefinitionOptions;
 }
 
+function formatNameByUrl(url: string) {
+  // 根据URL路径确定目录结构
+  const urlSplitArr = url.split('/');
+
+  const getFuncName = (arr: string[]) => {
+    let name = arr.pop()!;
+    if (name.includes('{')) {
+      // 过滤掉path参数
+      name = getFuncName(arr);
+    }
+    return name;
+  };
+
+  // api函数名
+  const funcName = getFuncName(urlSplitArr);
+
+  // 文件名
+  const fileName = urlSplitArr.pop() || 'common';
+  // 目录名
+  const dirName = urlSplitArr.join('/');
+
+  return {
+    funcName,
+    fileName,
+    dirName,
+  };
+}
+
 export function generateApiFile(
   url: string,
   apiCollections: ApiCollections,
   definitionCollections: SWDefinitionCollections,
   options: ApiOptions
 ) {
-  // 根据URL路径确定目录结构
-  const urlSplitArr = url.split('/');
+  const { funcName, fileName, dirName } = formatNameByUrl(url);
 
-  // api函数名
-  let funcName = urlSplitArr.pop()!;
-  if (funcName.includes('{')) {
-    // 过滤掉path参数
-    funcName = urlSplitArr.pop()!;
-  }
-  // 文件名
-  const fileName = urlSplitArr.pop()!;
-  // 目录名
-  const dirName = urlSplitArr.join('/');
-
-  console.log('===== [url]', url, funcName, fileName);
+  console.log(
+    `===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`
+  );
 
   // 创建目录 TODO:默认输出目录待验证
   const dirPath = path.join(options.outDir || path.resolve('src/api'), dirName);
@@ -115,6 +133,7 @@ export function generateApiFile(
   methodKeys.forEach((method) => {
     const api = apiCollections[method];
 
+    // 入参
     const inResult = api.parameters
       ? generateQueryFile(
           api.parameters,
@@ -122,52 +141,45 @@ export function generateApiFile(
           options.definition!
         )
       : undefined;
-    if (inResult) {
-      writeToIndexFile(inResult);
-    }
 
     // 出参
     let resRef = api.responses?.[200].schema?.$ref;
 
-    // 生成类型定义文件
     if (resRef) {
       const definitionKey = resRef.replace('#/definitions/', '');
-      const result = generateDefinitionFile(
+      generateDefinitionFile(
         definitionKey,
         definitionCollections,
         options.definition!
       );
-      if (result) {
-        writeToIndexFile(result);
-      }
     }
 
-    let outType = resRef ? formatObjName(resRef) : 'any';
-    // 处理泛型前缀
-    outType = defPrefix(outType);
+    const apiContext: ApiContext = {
+      name: funcName,
+      method,
+      url,
+      inType: inResult?.objName && defPrefix(inResult?.objName),
+      outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
+      comment: api.summary,
+    };
 
     // 生成api函数
     let apiFuncStr = '';
 
     if (typeof options.transform === 'function') {
-      apiFuncStr = options.transform({
-        name: funcName,
-        method,
-        url,
-        inType: inResult?.objName && defPrefix(inResult?.objName),
-        outType,
-        comment: api.summary,
-      });
+      apiFuncStr = options.transform(apiContext);
     } else {
-      const paramStr = inResult?.objName
-        ? `data: ${defPrefix(inResult.objName)}`
-        : '';
+      const { inType, outType, comment, name, url, method } = apiContext;
+      const paramStr = inType ? `data: ${inType}` : '';
+      const resStr = outType?.includes('List<')
+        ? `${outType.match(/List<(.*)>/)![1]}[]`
+        : outType;
       apiFuncStr = `
         /**
-         * ${api.summary || ''}
+         * ${comment || ''}
          */
-        export function ${funcName}(${paramStr}) {
-          return request<${outType}>({ url: '${url}', data, method: '${method}' });
+        export function ${name}(${paramStr}) {
+          return request<${resStr}>({ url: '${url}', data, method: '${method}' });
         }
       `;
     }
