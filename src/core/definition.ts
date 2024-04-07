@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-07 15:36:23
+ * @LastEditTime: 2024-04-07 16:05:38
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -34,7 +34,7 @@ export interface GenerateDefinitionResult {
   outDir: string;
 }
 
-const GENERIC_TYPE_NAMES = ['T', 'K', 'U', 'V'];
+export const GENERIC_TYPE_NAMES = ['T', 'K', 'U', 'V'];
 
 /**
  * 生成类型定义文件
