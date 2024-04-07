@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-07 16:26:33
+ * @LastEditTime: 2024-04-07 17:20:12
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -49,54 +49,27 @@ export interface ApiParameter {
   };
 }
 
+/**
+ * 写入到index.ts
+ * @param objName 
+ * @param outDir 
+ * @returns 
+ */
 export function writeToIndexFile(objName: string, outDir: string) {
-  /**
-   * 文件模板
-   * import { RepairWorkDetailVO } from './RepairWorkDetailVO';
-   *
-   * declare global {
-   *   namespace defs {
-   *     export {
-   *       RepairWorkDetailVO,
-   *     };
-   *   }
-   * }
-   */
 
   const defFilePath = path.join(outDir, 'index.ts');
-  // const importMark = '/* --- import --- */';
-  // const exportMark = '/* --- export --- */';
 
   // 新建
   if (!fs.existsSync(defFilePath)) {
-    // fs.writeFileSync(
-    //   defFilePath,
-    //   `import { ${objName} } from './${objName}';\n${importMark}\n` +
-    //     '\ndeclare global {\n  namespace defs {\n    export {\n' +
-    //     `      ${objName},\n` +
-    //     `      ${exportMark}\n` +
-    //     '    };\n  }\n}'
-    // );
     fs.writeFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
 
     return defFilePath;
   }
 
-  // 追加
   let defFileContent = fs.readFileSync(defFilePath, 'utf-8');
-  
   // 判断是否已经导入
   if (defFileContent.indexOf(objName) === -1) {
-    // defFileContent = defFileContent
-    //   .replace(
-    //     importMark,
-    //     `import { ${objName} } from './${objName}';\n${importMark}`
-    //   )
-    //   .replace(exportMark, `${objName},\n      ${exportMark}`);
-  
-    // // 写入文件
-    // fs.writeFileSync(defFilePath, defFileContent);
-
+    // 追加
     fs.appendFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
   }
 

@@ -1,10 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-04-01 16:04:02
+ * @LastEditTime: 2024-04-07 17:16:55
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
+import { cosmiconfigSync } from 'cosmiconfig';
+
 /**
  * 去掉后端对象名中的非法字符
  * 比如：com.zmn.common.dto2.ResponseDTO«List«ActivityListVO对象»»     ======>     List<ActivityListVO>
@@ -85,4 +87,25 @@ export function defPrefix(type: string) {
   return isBaseType(type) ? type : type.replace(/\w+/g, (match) => {
     return isBaseType(match) ? match : `models.${match}`;
   });
+}
+
+/**
+ * 合并配置项
+ * @param options 
+ * @returns 
+ */
+export function mergeConfig(options: any) {
+  const explorerSync = cosmiconfigSync('noapi');
+  const searchedFor = explorerSync.search();
+
+  const config = {
+    ...(searchedFor?.config || {}),
+    ...options,
+  };
+
+  if (!config.swUrl) {
+    throw new Error('请配置 swagger 文档地址');
+  }
+
+  return config;
 }

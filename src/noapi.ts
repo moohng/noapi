@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-07 16:59:47
+ * @LastEditTime: 2024-04-07 17:16:28
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -15,15 +15,15 @@ import {
   SWPathApiCollections,
   formatNameByUrl,
   generateBatch,
-} from './core/api.js';
+} from './utils/api.js';
 import {
   ApiParameter,
   GENERIC_TYPE_NAMES,
   GenerateDefinitionResult,
   SWDefinitionCollections,
   writeToIndexFile,
-} from './core/definition.js';
-import { defPrefix, formatObjName, parseToTsType } from './utils.js';
+} from './utils/definition.js';
+import { defPrefix, formatObjName, parseToTsType } from './utils/tools.js';
 
 interface SWJson {
   swagger: string;

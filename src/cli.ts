@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 
-import path from 'path';
 import { program } from 'commander';
-import { cosmiconfigSync } from 'cosmiconfig';
 import { createNoApi } from './noapi.js';
+import { mergeConfig } from './utils/tools.js';
 
 program
   .version('1.0.0')
-  .description('欢迎使用 NoAPI，使用 npx noapi <urls...> 立即体验！');
+  .description(
+    '欢迎使用 NoAPI，使用 npx noapi api url1,url2... 立即体验！\n\
+如果生成的api方法或类型文件有问题，建议使用-p参数查看接口相关信息，然后使用def命令手动生成类型定义。\n\
+swUrl和outDir等相关参数建议写在配置文件noapi.config.js中。'
+  );
 
 program
   .command('api <urls>', { isDefault: true }) // <urls...> 可以解析成一个数组
@@ -22,7 +25,7 @@ program
     const config = mergeConfig(options);
 
     const noapi = createNoApi(config);
-  
+
     urls = urls.split(',').map((url: string) => `/${url}`);
 
     if (options.parse) {
@@ -33,36 +36,20 @@ program
   });
 
 program
-  .command('def <defs> <alias>')
-  .description('生成类型定义，必须是完整名称，以逗号分隔')
+  .command('def <defKeys> <alias>')
+  .description('生成类型定义，defKeys可通过api命令加-p参数获取')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .option('-s, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-o, --out-dir <outDir>', '指定类型文件输出目录')
-  .action(async (defs: string, alias: string, options) => {
-    console.log('开始运行...', defs, options);
+  .action(async (defKeys: string, alias: string, options) => {
+    console.log('开始运行...', defKeys, options);
 
     const { swUrl, cookie, outDir } = options;
     const config = mergeConfig({ swUrl, cookie, definition: { outDir } });
 
     const noapi = createNoApi(config);
 
-    await noapi.generateByDefs(defs.split(','), alias.split(','));
+    await noapi.generateByDefs(defKeys.split(','), alias.split(','));
   });
 
 program.parse(process.argv);
-
-function mergeConfig(options: any) {
-  const explorerSync = cosmiconfigSync('noapi');
-  const searchedFor = explorerSync.search();
-
-  const config = {
-    ...(searchedFor?.config || {}),
-    ...options,
-  };
-
-  if (!config.swUrl) {
-    throw new Error('请配置 swagger 文档地址');
-  }
-
-  return config;
-}

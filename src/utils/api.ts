@@ -67,6 +67,11 @@ export interface ApiOptions {
   definition?: GenerateDefinitionOptions;
 }
 
+/**
+ * 跟进url获取相关名称
+ * @param url 
+ * @returns 
+ */
 export function formatNameByUrl(url: string) {
   // 根据URL路径确定目录结构
   const urlSplitArr = url.split('/');
