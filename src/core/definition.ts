@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-07 14:53:10
+ * @LastEditTime: 2024-04-07 15:36:23
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -190,15 +190,6 @@ export interface ApiParameter {
 
 export function generateQueryFile(params: ApiParameter[], definitionCollections: SWDefinitionCollections, options: GenerateDefinitionOptions): GenerateDefinitionResult | undefined {
   // 入参
-  // "parameters": [
-  //   {
-  //     "name": "sign",
-  //     "in": "path",
-  //     "description": "sign",
-  //     "required": true,
-  //     "type": "string"
-  //   }
-  // ],
   // {
   //   "name": "categMatterId",
   //   "in": "query",
@@ -208,6 +199,42 @@ export function generateQueryFile(params: ApiParameter[], definitionCollections:
   //   "default": 0,
   //   "format": "int32"
   // },
+  
+  const queryParams = params.filter((item) => item.in === 'query');
+  if (queryParams.length > 0) {
+    // TODO: objName如何获取
+    // let codeStr = `export default interface ${objName} {\n`;
+    // // 生成query类型
+    // queryParams.forEach((property) => {
+    //   const tsType = parseToTsType(property as unknown as SWDefinitionProperty);
+
+    //   const { name, required, description } = property;
+    //   let propStr = `  ${name}${required ? '' : '?'}: ${tsType};\n`;
+    //   if (description) {
+    //     const comment = `  /** ${description} */`;
+    //     propStr = `${comment}\n${propStr}`;
+    //   }
+
+    //   // 拼接属性
+    //   codeStr += propStr;
+    // });
+    // codeStr += '}\n';
+  }
+
+  // "parameters": [
+  //   {
+  //     "name": "sign",
+  //     "in": "path",
+  //     "description": "sign",
+  //     "required": true,
+  //     "type": "string"
+  //   }
+  // ],
+  const pathParams = params.filter((item) => item.in === 'path');
+  if (pathParams.length > 0) {
+    // 生成path类型
+  }
+
   // "parameters": [
   //   {
   //     "in": "body",
@@ -219,16 +246,6 @@ export function generateQueryFile(params: ApiParameter[], definitionCollections:
   //     }
   //   }
   // ],
-  const queryParams = params.filter((item) => item.in === 'query');
-  if (queryParams.length > 0) {
-    // 生成query类型
-  }
-
-  const pathParams = params.filter((item) => item.in === 'path');
-  if (pathParams.length > 0) {
-    // 生成path类型
-  }
-
   const bodyParams = params.filter((item) => item.in === 'body');
   if (bodyParams.length > 0) {
     // 生成body类型
