@@ -175,13 +175,13 @@ export function generateApiFile(
         ? `${outType.match(/List<(.*)>/)![1]}[]`
         : outType;
       apiFuncStr = `
-        /**
-         * ${comment || ''}
-         */
-        export function ${name}(${paramStr}) {
-          return request<${resStr}>({ url: '${url}', data, method: '${method}' });
-        }
-      `;
+/**
+ * ${comment || ''}
+ */
+export function ${name}(${paramStr}) {
+  return request<${resStr}>({ url: '${url}', data, method: '${method}' });
+}
+`;
     }
 
     fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
