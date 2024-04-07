@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "lib/noapi.js",
-  "types": "lib/noapi.d.ts",
+  "types": "lib/types/noapi.d.ts",
   "bin": {
     "noapi": "./lib/cli.js"
   },
+  "includes": ["lib/**/*.ts"],
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",
