@@ -1,13 +1,7 @@
-import path from 'path';
-import fs from 'fs';
-import { defPrefix, formatObjName } from '../utils.js';
 import {
   ApiParameter,
   GenerateDefinitionOptions,
   SWDefinitionCollections,
-  generateDefinitionFile,
-  generateQueryFile,
-  writeToIndexFile,
 } from './definition.js';
 
 interface ApiResponse {
@@ -19,9 +13,9 @@ interface ApiResponse {
   };
 }
 
-type ApiMethod = 'get' | 'post';
+export type ApiMethod = 'get' | 'post';
 
-type ApiCollections = Record<
+export type ApiCollections = Record<
   ApiMethod | string,
   {
     tags?: string[];
@@ -35,7 +29,7 @@ export interface SWPathApiCollections {
   [key: string]: ApiCollections;
 }
 
-interface ApiContext {
+export interface ApiContext {
   /** 默认取URL最后一段 */
   name: string;
   url: string;
@@ -73,7 +67,7 @@ export interface ApiOptions {
   definition?: GenerateDefinitionOptions;
 }
 
-function formatNameByUrl(url: string) {
+export function formatNameByUrl(url: string) {
   // 根据URL路径确定目录结构
   const urlSplitArr = url.split('/');
 
@@ -101,95 +95,6 @@ function formatNameByUrl(url: string) {
   };
 }
 
-export function generateApiFile(
-  url: string,
-  apiCollections: ApiCollections,
-  definitionCollections: SWDefinitionCollections,
-  options: ApiOptions
-) {
-  const { funcName, fileName, dirName } = formatNameByUrl(url);
-
-  console.log(
-    `===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`
-  );
-
-  // 创建目录 TODO:默认输出目录待验证
-  const dirPath = path.join(options.outDir || path.resolve('src/api'), dirName);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
-  // 创建文件
-  const filePath = path.join(dirPath, `${fileName}.ts`);
-  if (!fs.existsSync(filePath)) {
-    const importHeader =
-      options.fileHeader ||
-      `import { request } from '@/utils/request';\nimport * as models from '@/model';\n`;
-    fs.writeFileSync(filePath, importHeader);
-  }
-
-  const methodKeys = Object.keys(apiCollections) as unknown as ApiMethod[];
-
-  methodKeys.forEach((method) => {
-    const api = apiCollections[method];
-
-    // 入参
-    const inResult = api.parameters
-      ? generateQueryFile(
-          api.parameters,
-          definitionCollections,
-          options.definition!
-        )
-      : undefined;
-
-    // 出参
-    let resRef = api.responses?.[200].schema?.$ref;
-
-    if (resRef) {
-      const definitionKey = resRef.replace('#/definitions/', '');
-      generateDefinitionFile(
-        definitionKey,
-        definitionCollections,
-        options.definition!
-      );
-    }
-
-    const apiContext: ApiContext = {
-      name: funcName,
-      method,
-      url,
-      inType: inResult?.objName && defPrefix(inResult?.objName),
-      outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
-      comment: api.summary,
-    };
-
-    // 生成api函数
-    let apiFuncStr = '';
-
-    if (typeof options.transform === 'function') {
-      apiFuncStr = options.transform(apiContext);
-    } else {
-      const { inType, outType, comment, name, url, method } = apiContext;
-      const paramStr = inType ? `data: ${inType}` : '';
-      const resStr = outType?.includes('List<')
-        ? `${outType.match(/List<(.*)>/)![1]}[]`
-        : outType;
-      apiFuncStr = `
-/**
- * ${comment || ''}
- */
-export function ${name}(${paramStr}) {
-  return request<${resStr}>({ url: '${url}', data, method: '${method}' });
-}
-`;
-    }
-
-    fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
-  });
-
-  console.log('===== [api]', filePath, '\n');
-}
-
 export function generateBatch(
   paths: SWPathApiCollections,
   definitionCollections: SWDefinitionCollections,
@@ -198,6 +103,6 @@ export function generateBatch(
   const pathKeys = Object.keys(paths);
 
   pathKeys.forEach((url) => {
-    generateApiFile(url, paths[url], definitionCollections, options);
+    // generateApiFile(url, paths[url], definitionCollections, options);
   });
 }

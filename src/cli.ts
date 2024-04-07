@@ -14,7 +14,8 @@ program
   .description('生成api函数，url路径不能以/开头')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .option('-s, --sw-url <swUrl>', '指定swagger文档地址')
-  .option('-o, --out-dir <outDir>', '指定swagger文档地址')
+  .option('-o, --out-dir <outDir>', '指定api输出目录')
+  .option('-p, --parse [onlyParse]', '输出接口相关信息')
   .action(async (urls, options) => {
     console.log('开始运行...', urls, options);
 
@@ -22,7 +23,13 @@ program
 
     const noapi = createNoApi(config);
   
-    await noapi.generateByUrls(urls.split(',').map((url: string) => `/${url}`));
+    urls = urls.split(',').map((url: string) => `/${url}`);
+
+    if (options.parse) {
+      await noapi.parseByUrls(urls);
+    } else {
+      await noapi.generateByUrls(urls);
+    }
   });
 
 program
@@ -30,11 +37,12 @@ program
   .description('生成类型定义，必须是完整名称，以逗号分隔')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .option('-s, --sw-url <swUrl>', '指定swagger文档地址')
-  .option('-o, --out-dir <outDir>', '指定swagger文档地址')
+  .option('-o, --out-dir <outDir>', '指定类型文件输出目录')
   .action(async (defs: string, alias: string, options) => {
     console.log('开始运行...', defs, options);
 
-    const config = mergeConfig(options);
+    const { swUrl, cookie, outDir } = options;
+    const config = mergeConfig({ swUrl, cookie, definition: { outDir } });
 
     const noapi = createNoApi(config);
 

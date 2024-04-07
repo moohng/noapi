@@ -1,13 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-07 16:05:38
+ * @LastEditTime: 2024-04-07 16:26:33
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
 import fs from 'fs';
 import path from 'path';
-import { formatObjName, parseToTsType } from '../utils.js';
 
 export interface SWDefinitionObj {
   required?: string[];
@@ -36,144 +35,6 @@ export interface GenerateDefinitionResult {
 
 export const GENERIC_TYPE_NAMES = ['T', 'K', 'U', 'V'];
 
-/**
- * 生成类型定义文件
- * @param definitionKey
- * @param definitionObj
- * @param options
- * @returns
- */
-export function generateDefinitionFile(
-  definitionKey: string,
-  definitionCollections: SWDefinitionCollections,
-  options: GenerateDefinitionOptions
-): GenerateDefinitionResult | undefined {
-  const keepOuter = false;
-  if (!keepOuter) {
-    definitionKey = definitionKey.match(/«(.+)»/)?.[1] || definitionKey;
-  }
-
-  // 忽略一些类型：List等
-  ['List'].forEach(ignoreType => {
-    definitionKey = definitionKey.match(new RegExp(`${ignoreType}«(.+)»`))?.[1] || definitionKey;
-  });
-
-  // 对象名称
-  let objName = formatObjName(definitionKey);
-
-  // 去掉泛型（尖括号里面的类型）
-  const idx = objName.indexOf('<');
-  if (idx > -1) {
-    objName = objName.substring(0, idx);
-  }
-
-  const { required, properties, description: objDesc } = definitionCollections[definitionKey] || {};
-  const { outDir, include, exclude, match } = options;
-
-  const filePath = path.join(outDir, `${objName}.ts`);
-
-  // 过滤一些不合法类型
-  if (
-    !objName ||
-    !properties ||
-    /^[a-z]/.test(objName) ||
-    exclude?.some((item) =>
-      item instanceof RegExp ? item.test(definitionKey) : item === objName
-    ) ||
-    (include &&
-      !include.some((item) =>
-        item instanceof RegExp ? item.test(definitionKey) : item === objName
-      )) ||
-    (match && !match.test(definitionKey))
-  ) {
-    return;
-  }
-
-  // 拼接代码
-  let codeStr = `export default interface ${objName} {\n`;
-  if (objDesc) {
-    codeStr = `/** ${objDesc} */\n${codeStr}`;
-  }
-
-  let genericIndex = -1;
-  const refList: string[] = [];
-  const genericTypes: string[] = [];
-
-  // 遍历属性
-  Object.keys(properties).forEach((propKey) => {
-    // 定义属性
-    const property = properties[propKey];
-
-    let tsType;
-
-    // 引用类型，递归生成
-    const hasRef = property.$ref || property.items?.$ref;
-    if (hasRef) {
-      const subDefinitionKey = hasRef.replace('#/definitions/', '');
-      if (definitionKey === subDefinitionKey) {
-        tsType = parseToTsType(property).replace('models.', '');
-      } else {
-        if (definitionKey !== subDefinitionKey) {
-          generateDefinitionFile(subDefinitionKey, definitionCollections, options)
-        }
-
-        if (!refList.includes(hasRef)) {
-          refList.push(hasRef);
-          tsType = GENERIC_TYPE_NAMES[++genericIndex];
-          genericTypes.push(tsType);
-        } else {
-          tsType = GENERIC_TYPE_NAMES[genericIndex];
-        }
-        tsType +=  property.items?.$ref ? '[]' : '';
-      }
-    } else {
-      tsType = parseToTsType(property);
-    }
-
-    const isRequired = required?.includes(propKey);
-
-    let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
-
-    // 添加注释
-    const descriptionComment = property.description
-      ? ` ${property.description} `
-      : '';
-    const minComment =
-      property.minLength != null ? ` 最小长度：${property.minLength} ` : '';
-    const maxComment =
-      property.maxLength != null ? ` 最大长度：${property.maxLength} ` : '';
-    if (descriptionComment || minComment || maxComment) {
-      const comment = `  /**${descriptionComment}${minComment}${maxComment}*/`;
-      propStr = `${comment}\n${propStr}`;
-    }
-
-    // 拼接属性
-    codeStr += propStr;
-  });
-
-  codeStr += '}\n';
-
-  // 是否有泛型
-  if (genericTypes.length > 0) {
-    codeStr = codeStr.replace(`interface ${objName}`, `interface ${objName}<${genericTypes.join(', ')}>`);
-  }
-
-  // 创建输出目录
-  if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
-  }
-
-  // 生成文件
-  fs.writeFileSync(filePath, codeStr);
-
-  console.log('===== [model]', filePath);
-
-  // 写入Index文件
-  writeToIndexFile(objName, outDir);
-
-  return { objName, fileName: objName, filePath, outDir };
-}
-
 export interface ApiParameter {
   /** 'body' | 'query' | 'path' */
   in: string;
@@ -186,72 +47,6 @@ export interface ApiParameter {
     [key: string]: any;
     '$ref'?: string;
   };
-}
-
-export function generateQueryFile(params: ApiParameter[], definitionCollections: SWDefinitionCollections, options: GenerateDefinitionOptions): GenerateDefinitionResult | undefined {
-  // 入参
-  // {
-  //   "name": "categMatterId",
-  //   "in": "query",
-  //   "description": "categMatterId",
-  //   "required": false,
-  //   "type": "integer",
-  //   "default": 0,
-  //   "format": "int32"
-  // },
-  
-  const queryParams = params.filter((item) => item.in === 'query');
-  if (queryParams.length > 0) {
-    // TODO: objName如何获取
-    // let codeStr = `export default interface ${objName} {\n`;
-    // // 生成query类型
-    // queryParams.forEach((property) => {
-    //   const tsType = parseToTsType(property as unknown as SWDefinitionProperty);
-
-    //   const { name, required, description } = property;
-    //   let propStr = `  ${name}${required ? '' : '?'}: ${tsType};\n`;
-    //   if (description) {
-    //     const comment = `  /** ${description} */`;
-    //     propStr = `${comment}\n${propStr}`;
-    //   }
-
-    //   // 拼接属性
-    //   codeStr += propStr;
-    // });
-    // codeStr += '}\n';
-  }
-
-  // "parameters": [
-  //   {
-  //     "name": "sign",
-  //     "in": "path",
-  //     "description": "sign",
-  //     "required": true,
-  //     "type": "string"
-  //   }
-  // ],
-  const pathParams = params.filter((item) => item.in === 'path');
-  if (pathParams.length > 0) {
-    // 生成path类型
-  }
-
-  // "parameters": [
-  //   {
-  //     "in": "body",
-  //     "name": "modifyDIO",
-  //     "description": "modifyDIO",
-  //     "required": true,
-  //     "schema": {
-  //       "$ref": "#/definitions/CrpCooperationModifyDIO对象"
-  //     }
-  //   }
-  // ],
-  const bodyParams = params.filter((item) => item.in === 'body');
-  if (bodyParams.length > 0) {
-    // 生成body类型
-    const definitionKey = bodyParams[0].schema?.$ref?.replace('#/definitions/', '');
-    return definitionKey ? generateDefinitionFile(definitionKey, definitionCollections, options) : undefined;
-  }
 }
 
 export function writeToIndexFile(objName: string, outDir: string) {
@@ -322,15 +117,15 @@ export function generateBatch(
   const definitionKeys = Object.keys(definitions);
   let definitionTotal = 0;
   definitionKeys.forEach((objKey) => {
-    const result = generateDefinitionFile(objKey, definitions, options);
+    // const result = generateDefinitionFile(objKey, definitions, options);
 
-    if (result) {
-      // 统计数量
-      definitionTotal++;
+    // if (result) {
+    //   // 统计数量
+    //   definitionTotal++;
 
-      // 写入到defs.d.ts文件
-      writeToIndexFile(result.objName, result.outDir);
-    }
+    //   // 写入到defs.d.ts文件
+    //   writeToIndexFile(result.objName, result.outDir);
+    // }
   });
 
   console.log(`===== 类型定义文件生成完毕，共：${definitionTotal} 个`);
