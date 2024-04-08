@@ -7,7 +7,9 @@
   "bin": {
     "noapi": "./lib/cli.js"
   },
-  "includes": ["lib/**/*.ts"],
+  "includes": [
+    "lib/**/*.ts"
+  ],
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",

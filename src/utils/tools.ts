@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-04-07 17:16:55
+ * @LastEditTime: 2024-04-08 10:39:12
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -103,9 +103,14 @@ export function mergeConfig(options: any) {
     ...options,
   };
 
-  if (!config.swUrl) {
-    throw new Error('请配置 swagger 文档地址');
-  }
-
   return config;
+}
+
+/**
+ * 报错并退出
+ * @param message
+ */
+export function exitWithError(...messages: string[]) {
+  console.error('Error:', ...messages);
+  process.exit(1);
 }

@@ -2,7 +2,7 @@
 
 import { program } from 'commander';
 import { createNoApi } from './noapi.js';
-import { mergeConfig } from './utils/tools.js';
+import { exitWithError, mergeConfig } from './utils/tools.js';
 
 program
   .version('1.0.0')
@@ -13,12 +13,12 @@ swUrl和outDir等相关参数建议写在配置文件noapi.config.js中。'
   );
 
 program
-  .command('api <urls>', { isDefault: true }) // <urls...> 可以解析成一个数组
+  .command('api [urls]', { isDefault: true }) // <urls...> 可以解析成一个数组
   .description('生成api函数，url路径不能以/开头')
+  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
-  .option('-s, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-o, --out-dir <outDir>', '指定api输出目录')
-  .option('-p, --parse [onlyParse]', '输出接口相关信息')
+  .option('-l, --list [showList]', '查询api接口')
   .action(async (urls, options) => {
     console.log('开始运行...', urls, options);
 
@@ -26,13 +26,18 @@ program
 
     const noapi = createNoApi(config);
 
-    urls = urls.split(',').map((url: string) => `/${url}`);
+    urls = urls?.split(',').map((url: string) => `/${url}`);
 
-    if (options.parse) {
-      await noapi.parseByUrls(urls);
-    } else {
-      await noapi.generateByUrls(urls);
+    if (options.list) {
+      await noapi.listApi(urls);
+      return;
     }
+
+    if (!urls) {
+      exitWithError('请提供url地址');
+    }
+
+    await noapi.generateByUrls(urls);
   });
 
 program
