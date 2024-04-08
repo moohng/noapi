@@ -1,15 +1,18 @@
 {
-  "name": "noapi",
+  "name": "@zmn/noapi",
   "version": "1.0.0",
   "description": "",
   "main": "lib/noapi.js",
   "types": "lib/types/noapi.d.ts",
   "bin": {
-    "noapi": "./lib/cli.js"
+    "noapi": "lib/cli.js"
   },
-  "includes": [
-    "lib/**/*.ts"
+  "files": [
+    "lib"
   ],
+  "publishConfig": {
+    "registry": "https://maven.xiujiadian.com/repository/zmn_npm/"
+  },
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",
@@ -29,7 +32,8 @@
   "dependencies": {
     "commander": "^12.0.0",
     "cosmiconfig": "^9.0.0",
-    "node-fetch": "^2.x"
+    "node-fetch": "^2.x",
+    "readline": "^1.3.0"
   },
   "jest": {
     "transformIgnorePatterns": []

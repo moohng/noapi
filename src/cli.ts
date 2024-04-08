@@ -2,7 +2,8 @@
 
 import { program } from 'commander';
 import { createNoApi } from './noapi.js';
-import { exitWithError, mergeConfig } from './utils/tools.js';
+import { createConfig, exitWithError, mergeConfig } from './utils/tools.js';
+import readline from 'readline/promises';
 
 program
   .version('1.0.0')
@@ -12,6 +13,7 @@ program
 swUrl和outDir等相关参数建议写在配置文件noapi.config.js中。'
   );
 
+// api命令
 program
   .command('api [urls]', { isDefault: true }) // <urls...> 可以解析成一个数组
   .description('生成api函数，url路径不能以/开头')
@@ -20,7 +22,7 @@ program
   .option('-o, --out-dir <outDir>', '指定api输出目录')
   .option('-l, --list [showList]', '查询api接口')
   .action(async (urls, options) => {
-    console.log('开始运行...', urls, options);
+    console.log('开始运行...');
 
     const config = mergeConfig(options);
 
@@ -40,14 +42,15 @@ program
     await noapi.generateByUrls(urls);
   });
 
+// def命令
 program
   .command('def <defKeys> <alias>')
-  .description('生成类型定义，defKeys可通过api命令加-p参数获取')
+  .description('生成类型定义，defKeys可通过api命令加-l参数获取')
+  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
-  .option('-s, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-o, --out-dir <outDir>', '指定类型文件输出目录')
   .action(async (defKeys: string, alias: string, options) => {
-    console.log('开始运行...', defKeys, options);
+    console.log('开始运行...');
 
     const { swUrl, cookie, outDir } = options;
     const config = mergeConfig({ swUrl, cookie, definition: { outDir } });
@@ -55,6 +58,22 @@ program
     const noapi = createNoApi(config);
 
     await noapi.generateByDefs(defKeys.split(','), alias.split(','));
+  });
+
+// 初始化配置命令
+program
+  .command('init')
+  .description('初始化配置文件')
+  .action(async () => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    const swUrl = await rl.question('请输入swagger文档地址(swUrl): ');
+    const config = createConfig(swUrl);
+    rl.close();
+
+    console.log(`配置文件${config}已生成，可自定义配置.`);
   });
 
 program.parse(process.argv);

@@ -1,11 +1,13 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-04-08 10:39:12
+ * @LastEditTime: 2024-04-08 14:59:16
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import { cosmiconfigSync } from 'cosmiconfig';
+import path from 'path';
+import fs from 'fs';
 
 /**
  * 去掉后端对象名中的非法字符
@@ -113,4 +115,30 @@ export function mergeConfig(options: any) {
 export function exitWithError(...messages: string[]) {
   console.error('Error:', ...messages);
   process.exit(1);
+}
+
+/**
+ * 创建配置文件
+ * @returns
+ */
+export function createConfig(url?: string) {
+  const configFilePath = path.resolve(process.cwd(), 'noapi.config.js');
+
+  if (fs.existsSync(configFilePath)) {
+    exitWithError('配置文件已存在！');
+  }
+
+  const fileHeader = `const path = require('path');\nconst { definedNoApiConfig } = require('@zmn/noapi');\n`;
+
+  const defaultConfig = `{
+  swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
+  outDir: path.resolve('./src/api'),
+  definition: {
+    outDir: path.resolve('./src/model'),
+  },
+}`;
+
+  fs.writeFileSync(configFilePath, `${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`);
+
+  return configFilePath;
 }
