@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-08 12:07:00
+ * @LastEditTime: 2024-04-15 16:17:01
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -271,14 +271,14 @@ export function ${name}(${paramStr}) {
     definitionKey: string,
     aliasName?: string
   ): GenerateDefinitionResult | undefined {
-    const definitionCollection = this.definitions![definitionKey];
-    if (!definitionCollection) {
-      exitWithError(`${definitionKey} 不存在！`);
-    }
-
     const keepOuter = false;
     if (!keepOuter) {
       definitionKey = definitionKey.match(/«(.+)»/)?.[1] || definitionKey;
+    }
+
+    const definitionCollection = this.definitions![definitionKey];
+    if (!definitionCollection) {
+      exitWithError(`${definitionKey} 不存在！`);
     }
 
     // 忽略一些类型：List等
@@ -347,13 +347,24 @@ export function ${name}(${paramStr}) {
             this.generateDefinitionFile(subDefinitionKey);
           }
 
-          if (!refList.includes(hasRef)) {
-            refList.push(hasRef);
-            tsType = GENERIC_TYPE_NAMES[++genericIndex];
-            genericTypes.push(tsType);
+          // 泛型
+          if (definitionKey.includes(`«${subDefinitionKey}»`)) {
+            if (!refList.includes(hasRef)) {
+              refList.push(hasRef);
+              tsType = GENERIC_TYPE_NAMES[++genericIndex];
+              genericTypes.push(tsType);
+            } else {
+              tsType = GENERIC_TYPE_NAMES[genericIndex];
+            }
           } else {
-            tsType = GENERIC_TYPE_NAMES[genericIndex];
+            tsType = formatObjName(subDefinitionKey);
+            // 导入外部类型
+            const importStr = `import ${tsType} from './${tsType}'`;
+            if (!codeStr.includes(importStr)) {
+              codeStr = `${importStr};\n${codeStr.includes('import') ? '' : '\n'}${codeStr}`;
+            }
           }
+          
           tsType += property.items?.$ref ? '[]' : '';
         }
       } else {
@@ -494,3 +505,5 @@ export function createNoApi(config: NoApiConfig) {
 export function definedNoApiConfig(config: NoApiConfig) {
   return config;
 }
+
+export { createConfig, loadConfig } from './utils/tools';

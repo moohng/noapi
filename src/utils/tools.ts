@@ -1,11 +1,11 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-04-08 14:59:16
+ * @LastEditTime: 2024-04-13 17:08:39
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
-import { cosmiconfigSync } from 'cosmiconfig';
+import { LoaderSync, cosmiconfigSync } from 'cosmiconfig';
 import path from 'path';
 import fs from 'fs';
 
@@ -92,16 +92,30 @@ export function defPrefix(type: string) {
 }
 
 /**
+ * 加载配置项
+ * @returns 
+ */
+export function loadConfig(configPath?: string, loader?: LoaderSync) {
+  const explorerSync = cosmiconfigSync('noapi', {
+    loaders: loader && {
+      '.cjs': loader,
+      '.js': loader,
+      noExt: loader,
+    },
+  });
+  const searchedFor = explorerSync.search(configPath);
+
+  return searchedFor?.config;
+}
+
+/**
  * 合并配置项
  * @param options 
  * @returns 
  */
 export function mergeConfig(options: any) {
-  const explorerSync = cosmiconfigSync('noapi');
-  const searchedFor = explorerSync.search();
-
   const config = {
-    ...(searchedFor?.config || {}),
+    ...(loadConfig() || {}),
     ...options,
   };
 
@@ -119,10 +133,12 @@ export function exitWithError(...messages: string[]) {
 
 /**
  * 创建配置文件
+ * @param url 接口文档地址
+ * @param rootDir 项目根目录
  * @returns
  */
-export function createConfig(url?: string) {
-  const configFilePath = path.resolve(process.cwd(), 'noapi.config.js');
+export function createConfig(url?: string, rootDir = process.cwd()) {
+  const configFilePath = path.resolve(rootDir, 'noapi.config.js');
 
   if (fs.existsSync(configFilePath)) {
     exitWithError('配置文件已存在！');
