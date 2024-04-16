@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-07 17:20:12
+ * @LastEditTime: 2024-04-16 14:10:15
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -74,33 +74,4 @@ export function writeToIndexFile(objName: string, outDir: string) {
   }
 
   return defFilePath;
-}
-
-/**
- * 批量生成定义文件
- * @param {SWDefinitionCollections} definitions
- * @param {GenerateDefinitionOptions} options
- */
-export function generateBatch(
-  definitions: SWDefinitionCollections,
-  options: GenerateDefinitionOptions
-) {
-  console.time('生成类型定义文件耗时');
-
-  const definitionKeys = Object.keys(definitions);
-  let definitionTotal = 0;
-  definitionKeys.forEach((objKey) => {
-    // const result = generateDefinitionFile(objKey, definitions, options);
-
-    // if (result) {
-    //   // 统计数量
-    //   definitionTotal++;
-
-    //   // 写入到defs.d.ts文件
-    //   writeToIndexFile(result.objName, result.outDir);
-    // }
-  });
-
-  console.log(`===== 类型定义文件生成完毕，共：${definitionTotal} 个`);
-  console.timeEnd('生成类型定义文件耗时');
 }

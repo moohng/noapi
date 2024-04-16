@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-15 16:17:01
+ * @LastEditTime: 2024-04-16 14:27:08
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -14,7 +14,6 @@ import {
   ApiOptions,
   SWPathApiCollections,
   formatNameByUrl,
-  generateBatch,
 } from './utils/api.js';
 import {
   ApiParameter,
@@ -76,7 +75,7 @@ class NoApi {
     // 获取数据
     await this.fetchDataSource();
 
-    generateBatch(this.paths!, this.definitions!, this.config);
+    // generateBatch(this.paths!, this.definitions!, this.config);
   }
 
   /**
@@ -487,6 +486,7 @@ export function ${name}(${paramStr}) {
         ? this.generateDefinitionFile(definitionKey)
         : undefined;
     }
+    return;
   }
 }
 
@@ -505,5 +505,3 @@ export function createNoApi(config: NoApiConfig) {
 export function definedNoApiConfig(config: NoApiConfig) {
   return config;
 }
-
-export { createConfig, loadConfig } from './utils/tools';

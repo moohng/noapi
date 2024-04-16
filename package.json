@@ -2,8 +2,8 @@
   "name": "@zmn/noapi",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/noapi.js",
-  "types": "lib/types/noapi.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "bin": {
     "noapi": "lib/cli.js"
   },
@@ -16,13 +16,12 @@
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",
+    "check": "tsc --noEmit",
     "test": "jest"
   },
   "author": "mohong",
   "license": "ISC",
   "devDependencies": {
-    "@babel/preset-env": "^7.24.1",
-    "@babel/preset-typescript": "^7.24.1",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.29",
     "@types/node-fetch": "^2.6.11",
@@ -37,5 +36,16 @@
   },
   "jest": {
     "transformIgnorePatterns": []
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "modules": false
+        }
+      ],
+      "@babel/preset-typescript"
+    ]
   }
 }

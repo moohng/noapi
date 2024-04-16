@@ -1,7 +1,6 @@
 import {
   ApiParameter,
   GenerateDefinitionOptions,
-  SWDefinitionCollections,
 } from './definition.js';
 
 interface ApiResponse {
@@ -98,16 +97,4 @@ export function formatNameByUrl(url: string) {
     fileName,
     dirName,
   };
-}
-
-export function generateBatch(
-  paths: SWPathApiCollections,
-  definitionCollections: SWDefinitionCollections,
-  options: ApiOptions
-) {
-  const pathKeys = Object.keys(paths);
-
-  pathKeys.forEach((url) => {
-    // generateApiFile(url, paths[url], definitionCollections, options);
-  });
 }

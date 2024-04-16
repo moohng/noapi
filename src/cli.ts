@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { program } from 'commander';
 import { createNoApi } from './noapi.js';
 import { createConfig, exitWithError, mergeConfig } from './utils/tools.js';
