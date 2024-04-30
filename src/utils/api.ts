@@ -45,21 +45,13 @@ export interface ApiOptions {
    */
   fileHeader?: string;
   /**
-   * 自定义生成api方法转换
+   * 自定义生成api方法
    */
-  transform?: (apiContext: ApiContext) => string;
+  customApi?: (apiContext: ApiContext) => string;
   /**
-   * 生成api方法之前调用
-   * @param apiContext
-   * @returns
+   * 自定义的一些其他代码转换
    */
-  beforeFunc?: (apiContext: ApiContext) => string;
-  /**
-   * 生成api方法之后调用
-   * @param apiContext
-   * @returns
-   */
-  afterFunc?: (apiContext: ApiContext) => string;
+  transformApi?: (source: string, apiContext: ApiContext) => string;
   /**
    * 类型定义配置
    */

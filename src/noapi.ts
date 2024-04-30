@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-16 14:27:08
+ * @LastEditTime: 2024-04-30 09:19:11
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -181,7 +181,7 @@ class NoApi {
       exitWithError(`${url} 不存在！`);
     }
 
-    const { transform, fileHeader, outDir } = this.config;
+    const { transformApi, customApi, fileHeader, outDir } = this.config;
 
     const { funcName, fileName, dirName } = formatNameByUrl(url);
 
@@ -234,8 +234,8 @@ class NoApi {
       // 生成api函数
       let apiFuncStr = '';
 
-      if (typeof transform === 'function') {
-        apiFuncStr = transform(apiContext);
+      if (typeof customApi === 'function') {
+        apiFuncStr = customApi(apiContext);
       } else {
         const { inType, outType, comment, name, url, method } = apiContext;
         const paramStr = inType ? `data: ${inType}` : '';
@@ -253,8 +253,13 @@ export function ${name}(${paramStr}) {
 }
 `;
       }
-
-      fs.appendFileSync(filePath, apiFuncStr, 'utf-8');
+      
+      let sourceStr = fs.readFileSync(filePath, 'utf-8');
+      sourceStr += apiFuncStr;
+      if (typeof transformApi === 'function') {
+        sourceStr = transformApi(sourceStr, apiContext);
+      }
+      fs.writeFileSync(filePath, sourceStr, 'utf-8');
     });
 
     console.log('===== [api]', filePath, '\n');
