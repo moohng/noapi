@@ -3,7 +3,7 @@ import {
   GenerateDefinitionOptions,
 } from './definition.js';
 
-interface ApiResponse {
+interface SWApiResponse {
   200: {
     description?: string;
     schema?: {
@@ -12,23 +12,26 @@ interface ApiResponse {
   };
 }
 
-export type ApiMethod = 'get' | 'post';
+export type SWApiMethod = 'get' | 'post';
 
-export type ApiCollections = Record<
-  ApiMethod | string,
-  {
-    tags?: string[];
-    summary?: string;
-    parameters?: ApiParameter[];
-    responses?: ApiResponse;
-  }
+export interface SWApiDefinition {
+  tags?: string[];
+  summary?: string;
+  parameters?: ApiParameter[];
+  responses?: SWApiResponse;
+}
+
+export type SWApiCollections = Record<
+  SWApiMethod | string,
+  SWApiDefinition
 >;
 
 export interface SWPathApiCollections {
-  [key: string]: ApiCollections;
+  [key: string]: SWApiCollections;
 }
 
 export interface ApiContext {
+  api: SWApiDefinition,
   /** 默认取URL最后一段 */
   name: string;
   url: string;

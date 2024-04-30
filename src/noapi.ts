@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-30 09:19:11
+ * @LastEditTime: 2024-04-30 09:32:29
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -10,7 +10,7 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import {
   ApiContext,
-  ApiMethod,
+  SWApiMethod,
   ApiOptions,
   SWPathApiCollections,
   formatNameByUrl,
@@ -204,7 +204,7 @@ class NoApi {
       fs.writeFileSync(filePath, importHeader);
     }
 
-    const methodKeys = Object.keys(apiCollections) as unknown as ApiMethod[];
+    const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
 
     methodKeys.forEach((method) => {
       const api = apiCollections[method];
@@ -223,6 +223,7 @@ class NoApi {
       }
 
       const apiContext: ApiContext = {
+        api,
         name: funcName,
         method,
         url,
