@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-30 09:32:29
+ * @LastEditTime: 2024-04-30 10:20:48
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -48,6 +48,9 @@ interface NoApiConfig extends ApiOptions {
 class NoApi {
   private config: NoApiConfig;
 
+  // 待生成的类型定义
+  private defTodo: Set<string | { name: string; parameters: ApiParameter[] }> = new Set();
+
   constructor(config: NoApiConfig) {
     this.config = {
       outDir: path.resolve('/src/api'),
@@ -87,8 +90,22 @@ class NoApi {
 
     console.log('开始生成api函数...');
 
-    urls.forEach((url) => {
-      this.generateApiFile(url);
+    try {
+      urls.forEach((url) => {
+        this.generateApiFile(url);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+
+    console.log('开始生成类型定义...');
+
+    this.defTodo.forEach((defKey) => {
+      if (typeof defKey ==='string') {
+        this.generateDefinitionFile(defKey);
+      } else {
+        this.generateQueryFile(defKey.parameters, defKey.name);
+      }
     });
   }
 
@@ -210,16 +227,18 @@ class NoApi {
       const api = apiCollections[method];
 
       // 入参
-      const inResult = api.parameters
-        ? this.generateQueryFile(api.parameters)
-        : undefined;
+      if (api.parameters) {
+        this.defTodo.add({
+          name: '', // TODO:如何命名？
+          parameters: api.parameters,
+        });
+      }
 
       // 出参
       let resRef = api.responses?.[200].schema?.$ref;
-
       if (resRef) {
         const definitionKey = resRef.replace('#/definitions/', '');
-        this.generateDefinitionFile(definitionKey);
+        this.defTodo.add(definitionKey);
       }
 
       const apiContext: ApiContext = {
@@ -227,7 +246,7 @@ class NoApi {
         name: funcName,
         method,
         url,
-        inType: inResult?.objName && defPrefix(inResult?.objName),
+        inType: '' || undefined,
         outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
         comment: api.summary,
       };
@@ -424,7 +443,8 @@ export function ${name}(${paramStr}) {
   }
 
   private generateQueryFile(
-    params: ApiParameter[]
+    params: ApiParameter[],
+    name?: string
   ): GenerateDefinitionResult | undefined {
     // 入参
     // {
