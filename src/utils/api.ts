@@ -72,7 +72,7 @@ export function formatNameByUrl(url: string) {
 
   const getFuncName = (arr: string[]) => {
     let name = arr.pop()!;
-    if (name.includes('{')) {
+    if (name.includes('{') || name.includes(':')) {
       // 过滤掉path参数
       name = getFuncName(arr);
     }

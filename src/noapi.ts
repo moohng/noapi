@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-04-30 10:20:48
+ * @LastEditTime: 2024-06-13 22:25:41
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -85,15 +85,20 @@ class NoApi {
    * 根据URL生成api函数
    * @param urls
    */
-  async generateByUrls(urls: string[]) {
+  async generateByUrls(urls: string[] | { url: string; filePath?: string; funcName?: string }) {
     await this.fetchDataSource();
 
     console.log('开始生成api函数...');
 
     try {
-      urls.forEach((url) => {
-        this.generateApiFile(url);
-      });
+      if (Array.isArray(urls)) {
+        urls.forEach((url) => {
+          this.generateApiFile(url);
+        });
+      } else {
+        const { url, filePath, funcName } = urls;
+        this.generateApiFile(url, filePath, funcName);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -192,7 +197,7 @@ class NoApi {
    * 生成api方法
    * @param url
    */
-  private generateApiFile(url: string) {
+  private generateApiFile(url: string, filePath?: string, funcName?: string) {
     const apiCollections = this.paths![url];
     if (!apiCollections) {
       exitWithError(`${url} 不存在！`);
@@ -200,8 +205,14 @@ class NoApi {
 
     const { transformApi, customApi, fileHeader, outDir } = this.config;
 
-    const { funcName, fileName, dirName } = formatNameByUrl(url);
+    let { funcName: defaultFuncName, fileName, dirName } = formatNameByUrl(url);
+    funcName = funcName || defaultFuncName;
+    if (filePath) {
+      const { dir, name } = path.parse(filePath);
 
+      dirName = dir || dirName;
+      fileName = name || fileName;
+    }
     console.log(
       `===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`
     );
@@ -213,12 +224,12 @@ class NoApi {
     }
 
     // 创建文件
-    const filePath = path.join(dirPath, `${fileName}.ts`);
-    if (!fs.existsSync(filePath)) {
+    const fullFilePath = path.join(dirPath, `${fileName}.ts`);
+    if (!fs.existsSync(fullFilePath)) {
       const importHeader =
         fileHeader ||
         `import { request } from '@/utils/request';\nimport * as models from '@/model';\n`;
-      fs.writeFileSync(filePath, importHeader);
+      fs.writeFileSync(fullFilePath, importHeader);
     }
 
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
@@ -274,15 +285,15 @@ export function ${name}(${paramStr}) {
 `;
       }
       
-      let sourceStr = fs.readFileSync(filePath, 'utf-8');
+      let sourceStr = fs.readFileSync(fullFilePath, 'utf-8');
       sourceStr += apiFuncStr;
       if (typeof transformApi === 'function') {
         sourceStr = transformApi(sourceStr, apiContext);
       }
-      fs.writeFileSync(filePath, sourceStr, 'utf-8');
+      fs.writeFileSync(fullFilePath, sourceStr, 'utf-8');
     });
 
-    console.log('===== [api]', filePath, '\n');
+    console.log('===== [api]', fullFilePath, '\n');
   }
 
   /**
@@ -396,8 +407,8 @@ export function ${name}(${paramStr}) {
       }
 
       const isRequired = required?.includes(propKey);
-
-      let propStr = `  ${propKey}${isRequired ? '' : '?'}: ${tsType};\n`;
+      // 过滤掉一些非法字符 如：key[]
+      let propStr = `  ${propKey.replace(/\W/g, '')}${isRequired ? '' : '?'}: ${tsType};\n`;
 
       // 添加注释
       const descriptionComment = property.description
@@ -446,6 +457,7 @@ export function ${name}(${paramStr}) {
     params: ApiParameter[],
     name?: string
   ): GenerateDefinitionResult | undefined {
+    console.log('生成query类型', name);
     // 入参
     // {
     //   "name": "categMatterId",
