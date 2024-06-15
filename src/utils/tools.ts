@@ -1,13 +1,14 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-04-13 17:08:39
+ * @LastEditTime: 2024-06-15 11:44:05
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import { LoaderSync, cosmiconfigSync } from 'cosmiconfig';
 import path from 'path';
 import fs from 'fs';
+import { NoApiConfig } from '..';
 
 /**
  * 去掉后端对象名中的非法字符
@@ -105,7 +106,7 @@ export function loadConfig(configPath?: string, loader?: LoaderSync) {
   });
   const searchedFor = explorerSync.search(configPath);
 
-  return searchedFor?.config;
+  return searchedFor?.config as NoApiConfig;
 }
 
 /**

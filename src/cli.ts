@@ -29,7 +29,13 @@ program
     urls = urls?.split(',').map((url: string) => `/${url}`);
 
     if (options.list) {
-      await noapi.listApi(urls);
+      const apis = await noapi.listApi(urls);
+      if (!apis?.length) {
+        console.log('没有找到api！');
+      } else {
+        console.log(apis);
+        console.log(`共找到${apis.length}条api`);
+      }
       return;
     }
 

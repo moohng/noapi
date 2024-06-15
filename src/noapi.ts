@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-13 22:25:41
+ * @LastEditTime: 2024-06-15 17:30:47
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -39,14 +39,24 @@ interface SWJson {
   definitions: SWDefinitionCollections;
 }
 
-interface NoApiConfig extends ApiOptions {
+export interface NoApiConfig extends ApiOptions {
   swUrl: string;
   cookie?: string;
   swJson?: SWJson;
 }
 
+export interface ApiInfo {
+  tag?: string;
+  title: string;
+  url: string;
+  method: string;
+  parameters: string;
+  responses: string;
+}
+
 class NoApi {
   private config: NoApiConfig;
+  private apis: ApiInfo[] = [];
 
   // 待生成的类型定义
   private defTodo: Set<string | { name: string; parameters: ApiParameter[] }> = new Set();
@@ -62,23 +72,8 @@ class NoApi {
     };
   }
 
-  get paths() {
-    return this.config.swJson?.paths;
-  }
-
   get definitions() {
     return this.config.swJson?.definitions;
-  }
-
-  /**
-   * 全量生成所有api函数（适用于：初始化、重构项目时）
-   * @returns
-   */
-  async auto() {
-    // 获取数据
-    await this.fetchDataSource();
-
-    // generateBatch(this.paths!, this.definitions!, this.config);
   }
 
   /**
@@ -86,7 +81,9 @@ class NoApi {
    * @param urls
    */
   async generateByUrls(urls: string[] | { url: string; filePath?: string; funcName?: string }) {
-    await this.fetchDataSource();
+    if (!this.apis?.length) {
+      await this.listApi();
+    }
 
     console.log('开始生成api函数...');
 
@@ -119,7 +116,9 @@ class NoApi {
    * @param defs
    */
   async generateByDefs(defs: string[], alias?: string[]) {
-    await this.fetchDataSource();
+    if (!this.apis?.length) {
+      await this.listApi();
+    }
 
     console.log('开始生成类型定义...');
 
@@ -132,18 +131,21 @@ class NoApi {
    * 列出Api接口信息
    */
   async listApi(urls?: string[]) {
-    await this.fetchDataSource();
+    if (!this.config.swJson) {
+      await this.fetchDataSource();
+    }
 
-    if (!this.paths) {
+    const paths = this.config.swJson?.paths;
+    if (!paths) {
       console.log('没有找到api！');
       return;
     }
 
-    urls = urls || Object.keys(this.paths!);
+    urls = urls || Object.keys(paths);
 
     const apis = [];
     for (const url of urls) {
-      const apiCollections = this.paths![url];
+      const apiCollections = paths[url];
       if (!apiCollections) {
         break;
       }
@@ -151,7 +153,7 @@ class NoApi {
         const api = apiCollections[method];
         return {
           tag: api.tags?.join('；'),
-          title: api.summary,
+          title: api.summary || url,
           url: url.replace(/^\//, ''),
           method: method.toUpperCase(),
           parameters: JSON.stringify(api.parameters),
@@ -161,12 +163,9 @@ class NoApi {
       apis.push(...tempApis);
     }
 
-    if (apis.length === 0) {
-      console.log('没有找到api！');
-    } else {
-      console.log(apis);
-      console.log(`共找到${apis.length}条api`);
-    }
+    this.apis = apis;
+
+    return apis as ApiInfo[];
   }
 
   // 私有函数
@@ -174,7 +173,7 @@ class NoApi {
   /**
    * 获取数据源
    */
-  private async fetchDataSource() {
+  async fetchDataSource() {
     const { swUrl, cookie } = this.config;
 
     console.log('开始获取api数据源...');
@@ -191,6 +190,8 @@ class NoApi {
     } catch (error) {
       exitWithError('数据源获取失败，请检查 swUrl 是否正确！');
     }
+
+    return this.config.swJson;
   }
 
   /**
@@ -198,7 +199,7 @@ class NoApi {
    * @param url
    */
   private generateApiFile(url: string, filePath?: string, funcName?: string) {
-    const apiCollections = this.paths![url];
+    const apiCollections = this.config.swJson!.paths![url];
     if (!apiCollections) {
       exitWithError(`${url} 不存在！`);
     }
