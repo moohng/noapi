@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-15 17:30:47
+ * @LastEditTime: 2024-06-19 10:56:10
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -60,13 +60,15 @@ class NoApi {
 
   // 待生成的类型定义
   private defTodo: Set<string | { name: string; parameters: ApiParameter[] }> = new Set();
+  // 已生成的类型Key，避免重复生成
+  private defKeyDone: Set<string> = new Set();
 
   constructor(config: NoApiConfig) {
     this.config = {
-      outDir: path.resolve('/src/api'),
+      outDir: path.resolve('src/api'),
       ...config,
       definition: {
-        outDir: path.resolve('/src/model'),
+        outDir: path.resolve('src/model'),
         ...config.definition,
       },
     };
@@ -152,9 +154,9 @@ class NoApi {
       const tempApis = Object.keys(apiCollections).map((method) => {
         const api = apiCollections[method];
         return {
+          url,
           tag: api.tags?.join('；'),
           title: api.summary || url,
-          url: url.replace(/^\//, ''),
           method: method.toUpperCase(),
           parameters: JSON.stringify(api.parameters),
           responses: JSON.stringify(api.responses),
@@ -295,6 +297,8 @@ export function ${name}(${paramStr}) {
     });
 
     console.log('===== [api]', fullFilePath, '\n');
+
+    return fullFilePath;
   }
 
   /**
@@ -355,8 +359,10 @@ export function ${name}(${paramStr}) {
       return;
     }
 
+    this.defKeyDone.add(definitionKey);
+
     // 拼接代码
-    let codeStr = `export default interface ${objName} {\n`;
+    let codeStr = `export default interface ${objName} {\n  // @NOAPI[${definitionKey}]\n`;
     if (objDesc) {
       codeStr = `/** ${objDesc} */\n${codeStr}`;
     }
@@ -376,12 +382,12 @@ export function ${name}(${paramStr}) {
       const hasRef = property.$ref || property.items?.$ref;
       if (hasRef) {
         const subDefinitionKey = hasRef.replace('#/definitions/', '');
-        if (definitionKey === subDefinitionKey) {
+        // FIXME: 可能造成死循环
+        console.log('递归生成', this.defKeyDone, subDefinitionKey, this.defKeyDone.has(subDefinitionKey));
+        if (this.defKeyDone.has(subDefinitionKey)) {
           tsType = parseToTsType(property).replace('models.', '');
         } else {
-          if (definitionKey !== subDefinitionKey) {
-            this.generateDefinitionFile(subDefinitionKey);
-          }
+          this.generateDefinitionFile(subDefinitionKey);
 
           // 泛型
           if (definitionKey.includes(`«${subDefinitionKey}»`)) {
