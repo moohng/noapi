@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-19 10:56:10
+ * @LastEditTime: 2024-06-19 11:18:18
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -74,8 +74,8 @@ class NoApi {
     };
   }
 
-  get definitions() {
-    return this.config.swJson?.definitions;
+  get swJson() {
+    return this.config.swJson;
   }
 
   /**
@@ -316,7 +316,7 @@ export function ${name}(${paramStr}) {
       definitionKey = definitionKey.match(/«(.+)»/)?.[1] || definitionKey;
     }
 
-    const definitionCollection = this.definitions![definitionKey];
+    const definitionCollection = this.config.swJson!.definitions![definitionKey];
     if (!definitionCollection) {
       exitWithError(`${definitionKey} 不存在！`);
     }
