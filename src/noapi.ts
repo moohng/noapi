@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-19 11:18:18
+ * @LastEditTime: 2024-06-20 11:42:40
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -40,7 +40,8 @@ interface SWJson {
 }
 
 export interface NoApiConfig extends ApiOptions {
-  swUrl: string;
+  swUrl?: string;
+  swFile?: string;
   cookie?: string;
   swJson?: SWJson;
 }
@@ -64,6 +65,9 @@ class NoApi {
   private defKeyDone: Set<string> = new Set();
 
   constructor(config: NoApiConfig) {
+    if (!config.swUrl && !config.swFile && !config.swJson) {
+      exitWithError('请提供有效的swagger文档地址或接口文档路径！');
+    }
     this.config = {
       outDir: path.resolve('src/api'),
       ...config,
@@ -176,21 +180,34 @@ class NoApi {
    * 获取数据源
    */
   async fetchDataSource() {
-    const { swUrl, cookie } = this.config;
+    const { swUrl, swFile, cookie } = this.config;
 
-    console.log('开始获取api数据源...');
+    if (swUrl) {
+      console.log('开始获取api数据源...');
 
-    try {
-      const res = await fetch(swUrl, {
-        headers: { 'Content-Type': 'application/json', Cookie: cookie || '' },
-      });
-      this.config.swJson = (await res.json()) as SWJson;
-      if (!this.config.swJson.swagger) {
-        exitWithError('请提供有效的swagger文档地址！');
+      try {
+        const res = await fetch(swUrl!, {
+          headers: { 'Content-Type': 'application/json', Cookie: cookie || '' },
+        });
+        this.config.swJson = (await res.json()) as SWJson;
+        if (!this.config.swJson.swagger) {
+          exitWithError('请提供有效的swagger文档地址！');
+        }
+        console.log('获取api数据源成功');
+      } catch (error) {
+        exitWithError('数据源获取失败，请检查 swUrl 是否正确！');
       }
-      console.log('获取api数据源成功');
-    } catch (error) {
-      exitWithError('数据源获取失败，请检查 swUrl 是否正确！');
+    } else if (swFile) {
+      console.log('开始读取api数据源...');
+
+      const swJson = require(swFile);
+
+      if (!swJson.swagger) {
+        exitWithError('请提供有效的swagger文档路径！');
+      }
+
+      this.config.swJson = swJson as SWJson;
+      console.log('读取api数据源成功');
     }
 
     return this.config.swJson;
@@ -536,8 +553,8 @@ export function ${name}(${paramStr}) {
 }
 
 export function createNoApi(config: NoApiConfig) {
-  if (!config?.swUrl) {
-    exitWithError('请检查是否正确配置了swUrl地址！');
+  if (!config?.swUrl && !config?.swFile) {
+    exitWithError('swUrl和swFile至少配置一个！');
   }
   return new NoApi(config);
 }
