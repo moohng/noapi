@@ -1,10 +1,9 @@
-const path = require('path');
-const { definedNoApiConfig } = require('@zmn/noapi');
-
+const path = require("path");
+const { definedNoApiConfig } = require("@zmn/noapi");
 module.exports = definedNoApiConfig({
-  swUrl: 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web',
-  outDir: path.resolve('./src/api'),
+  swUrl: "https://test3-devops.xiujiadian.com/swagger/doc.json",
+  outDir: path.resolve("./src/api"),
   definition: {
-    outDir: path.resolve('./src/model'),
+    outDir: path.resolve("./src/model"),
   },
 });

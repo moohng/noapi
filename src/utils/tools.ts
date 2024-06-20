@@ -1,13 +1,14 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-15 11:44:05
+ * @LastEditTime: 2024-06-20 16:39:35
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import { LoaderSync, cosmiconfigSync } from 'cosmiconfig';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises';
+import * as prettier from 'prettier';
 import { NoApiConfig } from '..';
 
 /**
@@ -138,24 +139,74 @@ export function exitWithError(...messages: string[]) {
  * @param rootDir 项目根目录
  * @returns
  */
-export function createConfig(url?: string, rootDir = process.cwd()) {
+export async function createConfig(url?: string, rootDir = process.cwd()) {
   const configFilePath = path.resolve(rootDir, 'noapi.config.js');
 
-  if (fs.existsSync(configFilePath)) {
+  if (await checkExists(configFilePath)) {
     exitWithError('配置文件已存在！');
   }
 
-  const fileHeader = `const path = require('path');\nconst { definedNoApiConfig } = require('@zmn/noapi');\n`;
+  const fileHeader = `const path = require('path');const { definedNoApiConfig } = require('@zmn/noapi');\n`;
 
   const defaultConfig = `{
-  swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
-  outDir: path.resolve('./src/api'),
-  definition: {
-    outDir: path.resolve('./src/model'),
-  },
-}`;
+    swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
+    outDir: path.resolve('./src/api'),
+    definition: {
+      outDir: path.resolve('./src/model'),
+    },
+  }`;
 
-  fs.writeFileSync(configFilePath, `${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`);
+  const configInput = await codeFormat(`${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`);
+
+  await writeToFile(configFilePath, configInput);
 
   return configFilePath;
+}
+
+/**
+ * 格式化代码
+ * @param code 
+ * @returns 
+ */
+export async function codeFormat(code: string) {
+  const formatted = await prettier.format(code, {
+    parser: 'babel',
+    // singleQuote: true,
+    // trailingComma: 'all',
+    // printWidth: 100,
+  });
+  return formatted;
+}
+
+/**
+ * 写入文件
+ * @param filePath 
+ * @param content 
+ */
+export async function writeToFile(filePath: string, content: string) {
+  // 创建输出文件
+  const exists = await checkExists(filePath);
+  if (!exists) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+  }
+
+  // 生成文件
+  return fs.writeFile(filePath, content, 'utf8');
+}
+
+/**
+ * 检查文件或目录是否存在
+ * @param path 
+ * @returns 
+ */
+export async function checkExists(path: string): Promise<boolean> {
+  try {
+    await fs.stat(path);
+    return true; // 文件或目录存在
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      return false; // 文件或目录不存在
+    }
+    throw error; // 如果是其他错误，抛出该错误
+  }
 }

@@ -1,12 +1,13 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-04-16 14:10:15
+ * @LastEditTime: 2024-06-20 17:32:41
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
+import { checkExists } from '..';
 
 export interface SWDefinitionObj {
   required?: string[];
@@ -27,7 +28,8 @@ export interface GenerateDefinitionOptions {
 }
 
 export interface GenerateDefinitionResult {
-  objName: string;
+  sourceCode: string;
+  typeName: string;
   fileName: string;
   filePath: string;
   outDir: string;
@@ -51,26 +53,26 @@ export interface ApiParameter {
 
 /**
  * 写入到index.ts
- * @param objName 
+ * @param typeName 
  * @param outDir 
  * @returns 
  */
-export function writeToIndexFile(objName: string, outDir: string) {
+export async function writeToIndexFile(typeName: string, outDir: string) {
 
   const defFilePath = path.join(outDir, 'index.ts');
 
   // 新建
-  if (!fs.existsSync(defFilePath)) {
-    fs.writeFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
+  if (!await checkExists(defFilePath)) {
+    await fs.writeFile(defFilePath, `export { default as ${typeName} } from './${typeName}';\n`);
 
     return defFilePath;
   }
 
-  let defFileContent = fs.readFileSync(defFilePath, 'utf-8');
+  let defFileContent = await fs.readFile(defFilePath, 'utf-8');
   // 判断是否已经导入
-  if (defFileContent.indexOf(objName) === -1) {
+  if (defFileContent.indexOf(typeName) === -1) {
     // 追加
-    fs.appendFileSync(defFilePath, `export { default as ${objName} } from './${objName}';\n`);
+    await fs.appendFile(defFilePath, `export { default as ${typeName} } from './${typeName}';\n`);
   }
 
   return defFilePath;
