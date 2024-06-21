@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-06-20 17:32:41
+ * @LastEditTime: 2024-06-21 17:14:37
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */

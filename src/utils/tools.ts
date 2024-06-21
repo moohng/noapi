@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-21 14:48:29
+ * @LastEditTime: 2024-06-21 16:39:43
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -40,28 +40,27 @@ export interface SWDefinitionProperty {
  * @param {SWDefinitionProperty} property
  * @returns
  */
-export function parseToTsType(property: SWDefinitionProperty): string {
-  // 数组类型
-  if (property.type === 'array') {
-    const subType = property.items ? parseToTsType(property.items) : 'any';
-    return `${subType}[]`;
-  }
-
-  // 对象引用
-  if (property.$ref) {
-    const name = formatObjName(property.$ref);
-    return `models.${name}`;
-  }
-
-  // 基本类型
-  if (property.type) {
+export function parseToTsType(property?: string | SWDefinitionProperty): string {
+  if (typeof property ==='string') {
     const map = {
       string: 'string',
       integer: 'number',
       boolean: 'boolean',
       object: 'object',
     };
-    return map[property.type] || 'any';
+    return map[property as keyof typeof map] || 'any';
+  }
+  
+  // 数组类型
+  if (property?.type === 'array') {
+    const subType = property.items ? parseToTsType(property.items) : 'any';
+    return `${subType}[]`;
+  }
+
+  // 对象引用
+  if (property?.$ref) {
+    const name = formatObjName(property.$ref);
+    return `models.${name}`;
   }
 
   return 'any';

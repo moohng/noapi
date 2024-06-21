@@ -62,6 +62,16 @@ export interface ApiOptions {
 }
 
 /**
+ * 生成api的结果
+ */
+export interface GenerateApiResult {
+  sourceType: 'api' | 'definition';
+  sourceCode: string;
+  fileName: string;
+  filePath: string;
+}
+
+/**
  * 跟进url获取相关名称
  * @param url 
  * @returns 
