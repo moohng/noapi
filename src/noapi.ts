@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-20 17:32:23
+ * @LastEditTime: 2024-06-21 15:05:04
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -22,6 +22,7 @@ import {
   writeToIndexFile,
 } from './utils/definition.js';
 import {
+  appendToFile,
   checkExists,
   codeFormat,
   defPrefix,
@@ -62,7 +63,7 @@ class NoApi {
   private apis: ApiInfo[] = [];
 
   // 待生成的类型定义
-  private defTodo: Set<string | { name: string; parameters: ApiParameter[] }> =
+  private defTodo: Set<string> =
     new Set();
   // 已生成的类型Key，避免重复生成
   private defKeyDone: Set<string> = new Set();
@@ -90,7 +91,7 @@ class NoApi {
    * @param urls
    */
   async generateByUrls(
-    urls: string[] | { url: string; filePath?: string; funcName?: string }
+    urls: (string | { url: string; filePath?: string; funcName?: string; method?: string })[]
   ) {
     if (!this.apis?.length) {
       await this.listApi();
@@ -100,14 +101,14 @@ class NoApi {
 
     try {
       if (Array.isArray(urls)) {
-        urls.forEach(async (url) => {
-          const { sourceCode, fullFilePath } = await this.generateApiCode(url);
-          writeToFile(fullFilePath, sourceCode);
+        urls.forEach(async (item: any) => {
+          const { sourceCode, fullFilePath } = await this.generateApiCode(item.url ? item : { url: item as string });
+          appendToFile(fullFilePath, sourceCode);
         });
       } else {
-        const { url, filePath, funcName } = urls;
-        const { sourceCode, fullFilePath } = await this.generateApiCode(url, filePath, funcName);
-        writeToFile(fullFilePath, sourceCode);
+        const { url, filePath, funcName, method } = urls;
+        const { sourceCode, fullFilePath } = await this.generateApiCode({ url, filePath, funcName, method });
+        appendToFile(fullFilePath, sourceCode);
       }
     } catch (error) {
       console.error(error);
@@ -116,11 +117,7 @@ class NoApi {
     console.log('开始生成类型定义...');
 
     [...this.defTodo].forEach(async (defKey) => {
-      if (typeof defKey === 'string') {
-        await this.generateDefinitionCode(defKey);
-      } else {
-        await this.generateQueryCode(defKey.parameters, defKey.name);
-      }
+      await this.generateDefinitionCode(defKey);
       this.generatedResult.forEach((result) => {
         if (result) {
           const { sourceCode, filePath, typeName, outDir } = result;
@@ -232,14 +229,23 @@ class NoApi {
    * 生成api方法
    * @param url
    */
-  public async generateApiCode(
-    url: string,
-    filePath?: string,
-    funcName?: string
-  ) {
+  public async generateApiCode({
+    url,
+    method: onlyMethod,
+    filePath,
+    funcName,
+  }: {
+    url: string;
+    method?: string;
+    filePath?: string;
+    funcName?: string;
+  }) {
     const apiCollections = this.config.swJson!.paths![url];
     if (!apiCollections) {
       exitWithError(`${url} 不存在！`);
+    }
+    if (onlyMethod && !apiCollections[onlyMethod = onlyMethod.toLowerCase()]) {
+      exitWithError(`${url} 的 ${onlyMethod} 方法不存在！`);
     }
 
     const { transformApi, customApi, fileHeader, outDir } = this.config;
@@ -260,34 +266,80 @@ class NoApi {
     const dirPath = path.join(outDir || path.resolve('src/api'), dirName);
     const fullFilePath = path.join(dirPath, `${fileName}.ts`);
     let codeStr = '';
-    if (!checkExists(fullFilePath)) {
+    if (!await checkExists(fullFilePath)) {
       // await fs.mkdir(dirPath, { recursive: true });
       codeStr =
         fileHeader ||
         `import { request } from '@/utils/request';\nimport * as models from '@/model';\n`;
     }
 
-    // 创建文件
-    // if (!fs.existsSync(fullFilePath)) {
-
-    //   fs.writeFileSync(fullFilePath, importHeader);
-    // }
-
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
 
     methodKeys.forEach((method) => {
+      if (onlyMethod && method !== onlyMethod) {
+        return;
+      }
+
       const api = apiCollections[method];
 
       // 入参
       if (api.parameters) {
-        this.defTodo.add({
-          name: '', // TODO:如何命名？
-          parameters: api.parameters,
+        // query path body
+        const queryParams: ApiParameter[] = [];
+        const pathParams: ApiParameter[] = [];
+        api.parameters.forEach(param => {
+          if (param.in === 'body') {
+            //   {
+            //     "in": "body",
+            //     "name": "modifyDIO",
+            //     "description": "modifyDIO",
+            //     "required": true,
+            //     "schema": {
+            //       "$ref": "#/definitions/CrpCooperationModifyDIO对象"
+            //     }
+            //   }
+            const definitionKey = param.schema?.$ref?.replace(
+              '#/definitions/',
+              ''
+            );
+            definitionKey && this.defTodo.add(definitionKey);
+          } else if (param.in === 'query') {
+            // 入参
+            // {
+            //   "name": "categMatterId",
+            //   "in": "query",
+            //   "description": "categMatterId",
+            //   "required": false,
+            //   "type": "integer",
+            //   "default": 0,
+            //   "format": "int32"
+            // },
+            queryParams.push(param);
+          } else if (param.in === 'path') {
+            //   {
+            //     "name": "sign",
+            //     "in": "path",
+            //     "description": "sign",
+            //     "required": true,
+            //     "type": "string"
+            //   }
+            pathParams.push(param);
+          }
         });
+        // 生成query类型
+        if (queryParams.length > 0) {
+          const queryName = `${funcName}Query`;
+          // this.defTodo.add({ name: queryName, parameters: queryParams });
+        }
+        // 生成path类型
+        if (pathParams.length > 0) {
+          const pathName = `${funcName}Path`;
+          // this.defTodo.add({ name: pathName, parameters: pathParams });
+        }
       }
 
       // 出参
-      let resRef = api.responses?.[200].schema?.$ref;
+      let resRef = api.responses?.[200]?.schema?.$ref;
       if (resRef) {
         const definitionKey = resRef.replace('#/definitions/', '');
         this.defTodo.add(definitionKey);
@@ -315,24 +367,25 @@ class NoApi {
           ? `${outType.match(/List<(.*)>/)![1]}[]`
           : outType;
         apiFuncStr = `
-          /**
-           * ${comment || ''}
-           */
           export function ${name}(${paramStr}) {
             return request<${resStr}>({ url: '${url}',${
               paramStr ? ' data,' : ''
             } method: '${method}' });
           }
         `;
+        if (comment) {
+          apiFuncStr = `
+          /**
+           * ${comment || ''}
+           */` + apiFuncStr;
+        }
       }
 
-      // let sourceStr = fs.readFileSync(fullFilePath, 'utf-8');
       if (typeof transformApi === 'function') {
         apiFuncStr = transformApi(apiFuncStr, apiContext);
       }
 
       codeStr += apiFuncStr;
-      // fs.writeFileSync(fullFilePath, sourceStr, 'utf-8');
     });
 
     console.log('===== [api]', fullFilePath, '\n');
@@ -491,18 +544,7 @@ class NoApi {
       );
     }
 
-    // // 创建输出目录
-    // if (!fs.existsSync(outDir)) {
-    //   fs.mkdirSync(outDir, { recursive: true });
-    // }
-
-    // // 生成文件
-    // fs.writeFileSync(filePath, codeStr);
-
     console.log('===== [model]', filePath);
-
-    // 写入Index文件
-    // writeToIndexFile(objName, outDir);
 
     this.generatedResult.push({
       sourceCode: await codeFormat(codeStr),
@@ -511,80 +553,6 @@ class NoApi {
       filePath,
       outDir,
     });
-  }
-
-  public generateQueryCode(
-    params: ApiParameter[],
-    name?: string
-  ) {
-    console.log('生成query类型', name);
-    // 入参
-    // {
-    //   "name": "categMatterId",
-    //   "in": "query",
-    //   "description": "categMatterId",
-    //   "required": false,
-    //   "type": "integer",
-    //   "default": 0,
-    //   "format": "int32"
-    // },
-
-    const queryParams = params.filter((item) => item.in === 'query');
-    if (queryParams.length > 0) {
-      // TODO: objName如何获取
-      // let codeStr = `export default interface ${objName} {\n`;
-      // // 生成query类型
-      // queryParams.forEach((property) => {
-      //   const tsType = parseToTsType(property as unknown as SWDefinitionProperty);
-      //   const { name, required, description } = property;
-      //   let propStr = `  ${name}${required ? '' : '?'}: ${tsType};\n`;
-      //   if (description) {
-      //     const comment = `  /** ${description} */`;
-      //     propStr = `${comment}\n${propStr}`;
-      //   }
-      //   // 拼接属性
-      //   codeStr += propStr;
-      // });
-      // codeStr += '}\n';
-    }
-
-    // "parameters": [
-    //   {
-    //     "name": "sign",
-    //     "in": "path",
-    //     "description": "sign",
-    //     "required": true,
-    //     "type": "string"
-    //   }
-    // ],
-    const pathParams = params.filter((item) => item.in === 'path');
-    if (pathParams.length > 0) {
-      // 生成path类型
-    }
-
-    // "parameters": [
-    //   {
-    //     "in": "body",
-    //     "name": "modifyDIO",
-    //     "description": "modifyDIO",
-    //     "required": true,
-    //     "schema": {
-    //       "$ref": "#/definitions/CrpCooperationModifyDIO对象"
-    //     }
-    //   }
-    // ],
-    const bodyParams = params.filter((item) => item.in === 'body');
-    if (bodyParams.length > 0) {
-      // 生成body类型
-      const definitionKey = bodyParams[0].schema?.$ref?.replace(
-        '#/definitions/',
-        ''
-      );
-      return definitionKey
-        ? this.generateDefinitionCode(definitionKey)
-        : undefined;
-    }
-    return;
   }
 }
 

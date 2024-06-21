@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-20 16:39:35
+ * @LastEditTime: 2024-06-21 14:48:29
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -170,9 +170,9 @@ export async function createConfig(url?: string, rootDir = process.cwd()) {
  */
 export async function codeFormat(code: string) {
   const formatted = await prettier.format(code, {
-    parser: 'babel',
-    // singleQuote: true,
-    // trailingComma: 'all',
+    parser: 'babel-ts',
+    singleQuote: true,
+    trailingComma: 'all',
     // printWidth: 100,
   });
   return formatted;
@@ -192,6 +192,23 @@ export async function writeToFile(filePath: string, content: string) {
 
   // 生成文件
   return fs.writeFile(filePath, content, 'utf8');
+}
+
+/**
+ * 追加内容到文件
+ * @param filePath 
+ * @param content 
+ * @returns 
+ */
+export async function appendToFile(filePath: string, content: string) {
+  // 创建输出文件
+  const exists = await checkExists(filePath);
+  if (!exists) {
+    return writeToFile(filePath, content);
+  }
+
+  // 追加内容
+  return fs.appendFile(filePath, content, 'utf8');
 }
 
 /**
