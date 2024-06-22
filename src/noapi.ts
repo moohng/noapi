@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-22 14:48:23
+ * @LastEditTime: 2024-06-22 15:39:07
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -31,6 +31,7 @@ import {
   formatObjName,
   parsePathParams,
   parseToTsType,
+  upperFirst,
   writeToFile,
 } from './utils/tools.js';
 import { TypeFieldOption, transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform.js';
@@ -293,10 +294,9 @@ class NoApi {
     const fullFilePath = path.join(dirPath, `${fileName}.ts`);
     let codeStr = '';
     if (!(await checkExists(fullFilePath))) {
-      // await fs.mkdir(dirPath, { recursive: true });
       codeStr =
         fileHeader ||
-        `import { request } from '@/utils/request';\nimport * as models from '@/model';\n`;
+        `import * as models from '@/model';\nimport request from '@/utils/request';\n`;
     }
 
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
@@ -308,7 +308,8 @@ class NoApi {
 
       const api = apiCollections[method];
 
-      let queryName = '';
+      // 入参类型名称
+      let inTypeName = '';
       const pathParams: TypeFieldOption[] = parsePathParams(url);
       // 入参
       if (api.parameters) {
@@ -329,7 +330,10 @@ class NoApi {
               '#/definitions/',
               ''
             );
-            definitionKey && defTodo.push(definitionKey);
+            if (definitionKey) {
+              inTypeName = formatObjName(definitionKey);
+              defTodo.push(definitionKey);
+            }
           } else if (param.in === 'query') {
             // 入参
             // {
@@ -358,16 +362,16 @@ class NoApi {
         });
         // 生成query类型
         if (queryParams.length > 0) {
-          queryName = `${funcName.replace(/^\w/, (match) => match.toUpperCase())}Query`;
-          const interfaceCode = transformTypeInterfaceCode(queryParams, queryName);
-          const fileName = `${queryName}.ts`;
-          const filePath = path.join(this.config.definition!.outDir, 'query', fileName);
+          inTypeName = `${upperFirst(fileName)}${upperFirst(funcName)}Query`;
+          const interfaceCode = transformTypeInterfaceCode(queryParams, inTypeName);
+          const queryFileName = `${inTypeName}.ts`;
+          const filePath = path.join(this.config.definition!.outDir, 'query', queryFileName);
           receiveHandler({
             sourceType: 'definition',
             sourceCode: interfaceCode,
-            fileName,
+            fileName: queryFileName,
             filePath,
-            typeName: queryName,
+            typeName: inTypeName,
             outDir: this.config.definition!.outDir,
           } as GenerateDefinitionResult);
         }
@@ -391,7 +395,7 @@ class NoApi {
         method,
         url,
         pathParams,
-        inType: queryName ? defPrefix(queryName) : undefined,
+        inType: inTypeName ? defPrefix(inTypeName) : undefined,
         outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
         comment: api.summary,
       };
@@ -417,7 +421,7 @@ class NoApi {
           export function ${name}(${paramStr}) {
             return request<${resStr}>({ url: ${urlStr},${
               inType ? ' data,' : ''
-            } method: '${method}' });
+            } method: '${method.toUpperCase()}' });
           }
         `;
         if (comment) {

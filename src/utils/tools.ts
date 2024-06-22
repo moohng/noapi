@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-22 14:11:53
+ * @LastEditTime: 2024-06-22 15:44:35
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -173,8 +173,9 @@ export async function codeFormat(code: string) {
   const formatted = await prettier.format(code, {
     parser: 'babel-ts',
     singleQuote: true,
-    trailingComma: 'all',
-    // printWidth: 100,
+    trailingComma: 'es5',
+    printWidth: 150,
+    endOfLine: 'auto',
   });
   return formatted;
 }
@@ -240,4 +241,13 @@ export function parsePathParams(url: string): TypeFieldOption[] {
     return params.map((item) => ({ name: item.replace(/\/|\{|\}/g, ''), required: true, type: 'string' }));
   }
   return [];
+}
+
+/**
+ * 首字母大写
+ * @param str 
+ * @returns 
+ */
+export function upperFirst(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
