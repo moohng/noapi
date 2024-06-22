@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-21 17:37:50
+ * @LastEditTime: 2024-06-22 14:48:23
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -29,10 +29,11 @@ import {
   defPrefix,
   exitWithError,
   formatObjName,
+  parsePathParams,
   parseToTsType,
   writeToFile,
 } from './utils/tools.js';
-import { transformTypeInterfaceCode } from './utils/transform.js';
+import { TypeFieldOption, transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform.js';
 
 interface SWJson {
   swagger: string;
@@ -105,10 +106,15 @@ class NoApi {
       sourceType,
       sourceCode,
       filePath,
-    }: GenerateApiResult) => {
-      sourceType === 'api'
-        ? appendToFile(filePath, sourceCode)
-        : writeToFile(filePath, sourceCode);
+      typeName,
+      outDir,
+    }: any) => {
+      if (sourceType === 'api') {
+        appendToFile(filePath, sourceCode)
+      } else {
+        writeToFile(filePath, sourceCode);
+        writeToIndexFile(typeName, outDir, filePath);
+      }
     };
 
     try {
@@ -253,7 +259,7 @@ class NoApi {
       filePath?: string;
       funcName?: string;
     },
-    receiveHandler: (result: GenerateApiResult) => void
+    receiveHandler: (result: GenerateApiResult | GenerateDefinitionResult) => void
   ) {
     const apiCollections = this.config.swJson!.paths![url];
     if (!apiCollections) {
@@ -303,11 +309,11 @@ class NoApi {
       const api = apiCollections[method];
 
       let queryName = '';
+      const pathParams: TypeFieldOption[] = parsePathParams(url);
       // 入参
       if (api.parameters) {
         // query path body
         const queryParams: ApiParameter[] = [];
-        const pathParams: ApiParameter[] = [];
         api.parameters.forEach((param) => {
           if (param.in === 'body') {
             //   {
@@ -344,7 +350,10 @@ class NoApi {
             //     "required": true,
             //     "type": "string"
             //   }
-            pathParams.push(param);
+            const idx = pathParams.findIndex((item) => item.name === param.name);
+            if (idx > -1) {
+              pathParams[idx].description = param.description;
+            }
           }
         });
         // 生成query类型
@@ -352,12 +361,15 @@ class NoApi {
           queryName = `${funcName.replace(/^\w/, (match) => match.toUpperCase())}Query`;
           const interfaceCode = transformTypeInterfaceCode(queryParams, queryName);
           const fileName = `${queryName}.ts`;
-          receiveHandler({ sourceType: 'definition', sourceCode: interfaceCode, fileName, filePath: path.join(this.config.definition!.outDir, 'query', fileName) });
-        }
-        // 生成path类型
-        if (pathParams.length > 0) {
-          const pathName = `${funcName}Path`;
-          // defTodo.push({ name: pathName, parameters: pathParams });
+          const filePath = path.join(this.config.definition!.outDir, 'query', fileName);
+          receiveHandler({
+            sourceType: 'definition',
+            sourceCode: interfaceCode,
+            fileName,
+            filePath,
+            typeName: queryName,
+            outDir: this.config.definition!.outDir,
+          } as GenerateDefinitionResult);
         }
       }
 
@@ -368,12 +380,18 @@ class NoApi {
         defTodo.push(definitionKey);
       }
 
+      // 转换url
+      if (pathParams.length > 0) {
+        url = url.replace(/\{(.*?)\}/g, (_, $1) => `\${params.${$1}\}`);
+      }
+
       const apiContext: ApiContext = {
         api,
         name: funcName,
         method,
         url,
-        inType: queryName,
+        pathParams,
+        inType: queryName ? defPrefix(queryName) : undefined,
         outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
         comment: api.summary,
       };
@@ -384,15 +402,21 @@ class NoApi {
       if (typeof customApi === 'function') {
         apiFuncStr = customApi(apiContext);
       } else {
-        const { inType, outType, comment, name, url, method } = apiContext;
-        const paramStr = inType ? `data: ${inType}` : '';
+        const { inType, outType, comment, name, url, method, pathParams } = apiContext;
+        let paramStr = inType ? `data: ${inType}` : '';
+        let urlStr = `'${url}'`;
+        if (pathParams?.length! > 0) {
+          let codeStr = pathParams!.map(transformTypeFieldCode).join('\n');
+          paramStr = `params: {\n${codeStr}\n}`;
+          urlStr = `\`${url}\``;
+        }
         const resStr = outType?.includes('List<')
           ? `${outType.match(/List<(.*)>/)![1]}[]`
           : outType;
         apiFuncStr = `
           export function ${name}(${paramStr}) {
-            return request<${resStr}>({ url: '${url}',${
-              paramStr ? ' data,' : ''
+            return request<${resStr}>({ url: ${urlStr},${
+              inType ? ' data,' : ''
             } method: '${method}' });
           }
         `;

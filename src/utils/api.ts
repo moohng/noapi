@@ -2,6 +2,7 @@ import {
   ApiParameter,
   GenerateDefinitionOptions,
 } from './definition.js';
+import { TypeFieldOption } from './transform.js';
 
 interface SWApiResponse {
   200: {
@@ -39,6 +40,7 @@ export interface ApiContext {
   inType?: string;
   outType?: string;
   comment?: string;
+  pathParams?: TypeFieldOption[];
 }
 
 export interface ApiOptions {

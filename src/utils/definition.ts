@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-06-21 17:14:37
+ * @LastEditTime: 2024-06-22 14:53:07
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
@@ -57,13 +57,18 @@ export interface ApiParameter {
  * @param outDir 
  * @returns 
  */
-export async function writeToIndexFile(typeName: string, outDir: string) {
+export async function writeToIndexFile(typeName: string, outDir: string, filePath?: string) {
 
   const defFilePath = path.join(outDir, 'index.ts');
 
+  let relativePath = filePath? path.relative(outDir, path.dirname(filePath)) : `.`;
+  if (!relativePath.startsWith('.')) {
+    relativePath = `./${relativePath}`;
+  }
+
   // 新建
   if (!await checkExists(defFilePath)) {
-    await fs.writeFile(defFilePath, `export { default as ${typeName} } from './${typeName}';\n`);
+    await fs.writeFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
 
     return defFilePath;
   }
@@ -72,7 +77,7 @@ export async function writeToIndexFile(typeName: string, outDir: string) {
   // 判断是否已经导入
   if (defFileContent.indexOf(typeName) === -1) {
     // 追加
-    await fs.appendFile(defFilePath, `export { default as ${typeName} } from './${typeName}';\n`);
+    await fs.appendFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
   }
 
   return defFilePath;

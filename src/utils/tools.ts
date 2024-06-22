@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-21 16:39:43
+ * @LastEditTime: 2024-06-22 14:11:53
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -10,6 +10,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import * as prettier from 'prettier';
 import { NoApiConfig } from '..';
+import { TypeFieldOption } from './transform';
 
 /**
  * 去掉后端对象名中的非法字符
@@ -41,29 +42,30 @@ export interface SWDefinitionProperty {
  * @returns
  */
 export function parseToTsType(property?: string | SWDefinitionProperty): string {
-  if (typeof property ==='string') {
-    const map = {
-      string: 'string',
-      integer: 'number',
-      boolean: 'boolean',
-      object: 'object',
-    };
-    return map[property as keyof typeof map] || 'any';
-  }
-  
-  // 数组类型
-  if (property?.type === 'array') {
-    const subType = property.items ? parseToTsType(property.items) : 'any';
-    return `${subType}[]`;
+  if (typeof property !== 'string') {
+    // 数组类型
+    if (property?.type === 'array') {
+      const subType = property.items ? parseToTsType(property.items) : 'any';
+      return `${subType}[]`;
+    }
+
+    // 对象引用
+    if (property?.$ref) {
+      const name = formatObjName(property.$ref);
+      return `models.${name}`;
+    }
+
+    property = property?.type;
   }
 
-  // 对象引用
-  if (property?.$ref) {
-    const name = formatObjName(property.$ref);
-    return `models.${name}`;
-  }
+  const map = {
+    string: 'string',
+    integer: 'number',
+    boolean: 'boolean',
+    object: 'object',
+  };
 
-  return 'any';
+  return map[property as keyof typeof map] || 'any';
 }
 
 /**
@@ -225,4 +227,17 @@ export async function checkExists(path: string): Promise<boolean> {
     }
     throw error; // 如果是其他错误，抛出该错误
   }
+}
+
+/**
+ * 解析路径参数
+ * @param url 
+ * @returns 
+ */
+export function parsePathParams(url: string): TypeFieldOption[] {
+  const params = url.match(/\/\{([a-zA-Z0-9]+)\}/g);
+  if (params) {
+    return params.map((item) => ({ name: item.replace(/\/|\{|\}/g, ''), required: true, type: 'string' }));
+  }
+  return [];
 }
