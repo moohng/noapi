@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-22 15:44:35
+ * @LastEditTime: 2024-06-22 16:52:27
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
@@ -117,6 +117,8 @@ export function loadConfig(configPath?: string, loader?: LoaderSync) {
  * @returns 
  */
 export function mergeConfig(options: any) {
+  // 过滤掉空值
+  options = Object.fromEntries(Object.entries(options).filter((item) => item[1] !== undefined));
   const config = {
     ...(loadConfig() || {}),
     ...options,
@@ -147,13 +149,13 @@ export async function createConfig(url?: string, rootDir = process.cwd()) {
     exitWithError('配置文件已存在！');
   }
 
-  const fileHeader = `const path = require('path');const { definedNoApiConfig } = require('@zmn/noapi');\n`;
+  const fileHeader = `const { definedNoApiConfig } = require('@zmn/noapi');\n`;
 
   const defaultConfig = `{
     swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
-    outDir: path.resolve('./src/api'),
+    outDir: './src/api',
     definition: {
-      outDir: path.resolve('./src/model'),
+      outDir: './src/model',
     },
   }`;
 

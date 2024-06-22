@@ -1,7 +1,8 @@
 import { program } from 'commander';
 import { createNoApi } from './noapi.js';
-import { createConfig, exitWithError, mergeConfig } from './utils/tools.js';
+import { createConfig, exitWithError, mergeConfig, writeToFile } from './utils/tools.js';
 import readline from 'readline/promises';
+import path from 'path';
 
 program
   .version('1.0.0')
@@ -78,6 +79,27 @@ program
     rl.close();
 
     console.log(`配置文件${config}已生成，可自定义配置.`);
+  });
+
+// 更新文档
+program
+  .command('update')
+  .description('更新swagger文档')
+  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
+  .option('-c, --cookie <cookie>', 'url的授权cookie')
+  .action(async (options) => {
+    console.log('开始运行...');
+
+    const config = mergeConfig(options);
+
+    const noapi = createNoApi(config);
+
+    const result = await noapi.fetchDataSource();
+
+    const swFilePath = path.resolve(config.swFile || 'noapi-swagger-doc.json');
+    await writeToFile(swFilePath, JSON.stringify(result, null, 2));
+
+    console.log('文档更新成功！');
   });
 
 program.parse(process.argv);
