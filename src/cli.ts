@@ -2,7 +2,7 @@ import { program } from 'commander';
 import { createNoApi } from './noapi.js';
 import { createConfig, exitWithError, mergeConfig, writeToFile } from './utils/tools.js';
 import * as readline from 'readline/promises';
-import * as path from 'path';
+import path from 'path';
 
 program
   .version('1.0.0')

@@ -1,13 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-24 10:53:54
+ * @LastEditTime: 2024-06-24 14:23:01
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
-import { LoaderSync, cosmiconfigSync } from 'cosmiconfig';
-import * as path from 'path';
-import * as fs from 'fs/promises';
+import path from 'path';
+import fs from 'fs/promises';
 import * as prettier from 'prettier';
 import { NoApiConfig } from '..';
 import { TypeFieldOption } from './transform';
@@ -98,17 +97,16 @@ export function defPrefix(type: string) {
  * 加载配置项
  * @returns 
  */
-export function loadConfig(configPath?: string, loader?: LoaderSync) {
-  const explorerSync = cosmiconfigSync('noapi', {
-    loaders: loader && {
-      '.cjs': loader,
-      '.js': loader,
-      noExt: loader,
-    },
-  });
-  const searchedFor = explorerSync.search(configPath);
-
-  return searchedFor?.config as NoApiConfig;
+export function loadConfig(configRootPath = process.cwd(), loader = (filePath: string) => require(filePath)): NoApiConfig | undefined {
+  const configFilePath = path.join(configRootPath, 'noapi.config.js');
+  let config: NoApiConfig;
+  try {
+    config = loader(configFilePath);
+  } catch (error) {
+    console.error('Error:', error);
+    return undefined;
+  }
+  return config;
 }
 
 /**

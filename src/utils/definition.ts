@@ -1,12 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-06-24 11:42:28
+ * @LastEditTime: 2024-06-24 13:58:41
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import fs from 'fs/promises';
+import path from 'path';
 import { checkExists } from '..';
 
 export interface SWDefinitionObj {
