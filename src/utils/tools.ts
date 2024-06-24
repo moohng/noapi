@@ -1,13 +1,14 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-24 14:23:01
+ * @LastEditTime: 2024-06-24 16:43:15
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import path from 'path';
 import fs from 'fs/promises';
-import * as prettier from 'prettier';
+// import * as prettier from 'prettier';
+// import standard from 'standard';
 import { NoApiConfig } from '..';
 import { TypeFieldOption } from './transform';
 
@@ -170,14 +171,15 @@ export async function createConfig(url?: string, rootDir = process.cwd()) {
  * @returns 
  */
 export async function codeFormat(code: string) {
-  const formatted = await prettier.format(code, {
-    parser: 'babel-ts',
-    singleQuote: true,
-    trailingComma: 'es5',
-    printWidth: 150,
-    endOfLine: 'auto',
-  });
-  return formatted;
+  // const formatted = await standard.format(code, {
+  //   parser: 'babel-ts',
+  //   singleQuote: true,
+  //   trailingComma: 'es5',
+  //   printWidth: 150,
+  //   endOfLine: 'auto',
+  // });
+  // return formatted;
+  return code;
 }
 
 /**

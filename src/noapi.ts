@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-24 13:58:33
+ * @LastEditTime: 2024-06-24 16:44:59
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
@@ -14,14 +14,14 @@ import {
   SWPathApiCollections,
   formatNameByUrl,
   GenerateApiResult,
-} from './utils/api.js';
+} from './utils/api';
 import {
   ApiParameter,
   GENERIC_TYPE_NAMES,
   GenerateDefinitionResult,
   SWDefinitionCollections,
   writeToIndexFile,
-} from './utils/definition.js';
+} from './utils/definition';
 import {
   appendToFile,
   checkExists,
@@ -33,8 +33,8 @@ import {
   parseToTsType,
   upperFirst,
   writeToFile,
-} from './utils/tools.js';
-import { TypeFieldOption, transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform.js';
+} from './utils/tools';
+import { TypeFieldOption, transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform';
 
 interface SWJson {
   swagger: string;
@@ -231,6 +231,7 @@ class NoApi {
     } else if (swFile) {
       console.log('开始读取api数据源...');
 
+      // FIXME: 在vscode插件中，require会有兼容性问题
       const swJson = require(swFile);
 
       if (!swJson.swagger) {
@@ -418,18 +419,17 @@ class NoApi {
           ? `${outType.match(/List<(.*)>/)![1]}[]`
           : outType;
         apiFuncStr = `
-          export function ${name}(${paramStr}) {
-            return request<${resStr}>({ url: ${urlStr},${
-              inType ? ' data,' : ''
-            } method: '${method.toUpperCase()}' });
-          }
-        `;
+export function ${name}(${paramStr}) {
+  return request<${resStr}>({ url: ${urlStr},${
+    inType ? ' data,' : ''
+  } method: '${method.toUpperCase()}' });
+}
+`;
         if (comment) {
-          apiFuncStr =
-            `
-          /**
-           * ${comment || ''}
-           */` + apiFuncStr;
+          apiFuncStr = `
+/**
+ * ${comment || ''}
+ */` + apiFuncStr;
         }
       }
 

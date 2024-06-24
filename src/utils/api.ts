@@ -1,8 +1,8 @@
 import {
   ApiParameter,
   GenerateDefinitionOptions,
-} from './definition.js';
-import { TypeFieldOption } from './transform.js';
+} from './definition';
+import { TypeFieldOption } from './transform';
 
 interface SWApiResponse {
   200: {
