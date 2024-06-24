@@ -1,12 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatNameByUrl = void 0;
 /**
  * 跟进url获取相关名称
  * @param url
  * @returns
  */
-function formatNameByUrl(url) {
+export function formatNameByUrl(url) {
     // 根据URL路径确定目录结构
     const urlSplitArr = url.split('/');
     const getFuncName = (arr) => {
@@ -29,4 +26,3 @@ function formatNameByUrl(url) {
         dirName,
     };
 }
-exports.formatNameByUrl = formatNameByUrl;

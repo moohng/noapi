@@ -1,11 +1,11 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-22 16:52:16
+ * @LastEditTime: 2024-06-24 10:54:56
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
-import path from 'path';
+import * as path from 'path';
 import fetch from 'node-fetch';
 import {
   ApiContext,

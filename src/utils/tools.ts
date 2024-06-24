@@ -1,13 +1,13 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-22 16:52:27
+ * @LastEditTime: 2024-06-24 10:53:54
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import { LoaderSync, cosmiconfigSync } from 'cosmiconfig';
-import path from 'path';
-import fs from 'fs/promises';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 import * as prettier from 'prettier';
 import { NoApiConfig } from '..';
 import { TypeFieldOption } from './transform';

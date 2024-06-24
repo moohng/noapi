@@ -1,8 +1,8 @@
 import { program } from 'commander';
 import { createNoApi } from './noapi.js';
 import { createConfig, exitWithError, mergeConfig, writeToFile } from './utils/tools.js';
-import readline from 'readline/promises';
-import path from 'path';
+import * as readline from 'readline/promises';
+import * as path from 'path';
 
 program
   .version('1.0.0')

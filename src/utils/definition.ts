@@ -1,12 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-19 11:45:05
- * @LastEditTime: 2024-06-22 14:53:07
+ * @LastEditTime: 2024-06-24 11:42:28
  * @LastEditors: mohong@zmn.cn
  * @Description: 生成类型定义文件
  */
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { checkExists } from '..';
 
 export interface SWDefinitionObj {
@@ -68,6 +68,7 @@ export async function writeToIndexFile(typeName: string, outDir: string, filePat
 
   // 新建
   if (!await checkExists(defFilePath)) {
+    await fs.mkdir(path.dirname(defFilePath), { recursive: true });
     await fs.writeFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
 
     return defFilePath;

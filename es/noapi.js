@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,33 +7,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.definedNoApiConfig = exports.createNoApi = void 0;
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-22 16:52:16
+ * @LastEditTime: 2024-06-24 10:54:56
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
-const path_1 = __importDefault(require("path"));
-const node_fetch_1 = __importDefault(require("node-fetch"));
-const api_js_1 = require("./utils/api.js");
-const definition_js_1 = require("./utils/definition.js");
-const tools_js_1 = require("./utils/tools.js");
-const transform_js_1 = require("./utils/transform.js");
+import * as path from 'path';
+import fetch from 'node-fetch';
+import { formatNameByUrl, } from './utils/api.js';
+import { GENERIC_TYPE_NAMES, writeToIndexFile, } from './utils/definition.js';
+import { appendToFile, checkExists, codeFormat, defPrefix, exitWithError, formatObjName, parsePathParams, parseToTsType, upperFirst, writeToFile, } from './utils/tools.js';
+import { transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform.js';
 class NoApi {
     constructor(config) {
         this.apis = [];
         // 已生成的类型Key，避免重复生成
         this.defKeyDone = new Set();
         if (!config.swUrl && !config.swFile && !config.swJson) {
-            (0, tools_js_1.exitWithError)('请提供有效的swagger文档地址或接口文档路径！');
+            exitWithError('请提供有效的swagger文档地址或接口文档路径！');
         }
-        this.config = Object.assign(Object.assign({ outDir: path_1.default.resolve('src/api') }, config), { definition: Object.assign({ outDir: path_1.default.resolve('src/model') }, config.definition) });
+        this.config = Object.assign(Object.assign({ outDir: path.resolve('src/api') }, config), { definition: Object.assign({ outDir: path.resolve('src/model') }, config.definition) });
     }
     get swJson() {
         return this.config.swJson;
@@ -52,11 +46,11 @@ class NoApi {
             console.log('开始生成api函数...');
             const receiveHandler = ({ sourceType, sourceCode, filePath, typeName, outDir, }) => {
                 if (sourceType === 'api') {
-                    (0, tools_js_1.appendToFile)(filePath, sourceCode);
+                    appendToFile(filePath, sourceCode);
                 }
                 else {
-                    (0, tools_js_1.writeToFile)(filePath, sourceCode);
-                    (0, definition_js_1.writeToIndexFile)(typeName, outDir, filePath);
+                    writeToFile(filePath, sourceCode);
+                    writeToIndexFile(typeName, outDir, filePath);
                 }
             };
             try {
@@ -87,8 +81,8 @@ class NoApi {
             }
             console.log('开始生成类型定义...');
             const receiveHandler = ({ sourceCode, filePath, typeName, outDir, }) => {
-                (0, tools_js_1.writeToFile)(filePath, sourceCode);
-                (0, definition_js_1.writeToIndexFile)(typeName, outDir);
+                writeToFile(filePath, sourceCode);
+                writeToIndexFile(typeName, outDir);
             };
             defs.forEach((defKey, index) => {
                 this.generateDefinitionCode(defKey, receiveHandler, alias === null || alias === void 0 ? void 0 : alias[index]);
@@ -144,24 +138,24 @@ class NoApi {
             if (swUrl) {
                 console.log('开始获取api数据源...');
                 try {
-                    const res = yield (0, node_fetch_1.default)(swUrl, {
+                    const res = yield fetch(swUrl, {
                         headers: { 'Content-Type': 'application/json', Cookie: cookie || '' },
                     });
                     this.config.swJson = (yield res.json());
                     if (!this.config.swJson.swagger) {
-                        (0, tools_js_1.exitWithError)('请提供有效的swagger文档地址！');
+                        exitWithError('请提供有效的swagger文档地址！');
                     }
                     console.log('获取api数据源成功');
                 }
                 catch (error) {
-                    (0, tools_js_1.exitWithError)('数据源获取失败，请检查 swUrl 是否正确！');
+                    exitWithError('数据源获取失败，请检查 swUrl 是否正确！');
                 }
             }
             else if (swFile) {
                 console.log('开始读取api数据源...');
                 const swJson = require(swFile);
                 if (!swJson.swagger) {
-                    (0, tools_js_1.exitWithError)('请提供有效的swagger文档路径！');
+                    exitWithError('请提供有效的swagger文档路径！');
                 }
                 this.config.swJson = swJson;
                 console.log('读取api数据源成功');
@@ -177,27 +171,27 @@ class NoApi {
         return __awaiter(this, arguments, void 0, function* ({ url, method: onlyMethod, filePath, funcName, }, receiveHandler) {
             const apiCollections = this.config.swJson.paths[url];
             if (!apiCollections) {
-                (0, tools_js_1.exitWithError)(`${url} 不存在！`);
+                exitWithError(`${url} 不存在！`);
             }
             if (onlyMethod &&
                 !apiCollections[(onlyMethod = onlyMethod.toLowerCase())]) {
-                (0, tools_js_1.exitWithError)(`${url} 的 ${onlyMethod} 方法不存在！`);
+                exitWithError(`${url} 的 ${onlyMethod} 方法不存在！`);
             }
             const { transformApi, customApi, fileHeader, outDir } = this.config;
-            let { funcName: defaultFuncName, fileName, dirName } = (0, api_js_1.formatNameByUrl)(url);
+            let { funcName: defaultFuncName, fileName, dirName } = formatNameByUrl(url);
             funcName = funcName || defaultFuncName;
             if (filePath) {
-                const { dir, name } = path_1.default.parse(filePath);
+                const { dir, name } = path.parse(filePath);
                 dirName = dir || dirName;
                 fileName = name || fileName;
             }
             console.log(`===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`);
             const defTodo = [];
             // 创建目录 TODO:默认输出目录待验证
-            const dirPath = path_1.default.join(outDir || path_1.default.resolve('src/api'), dirName);
-            const fullFilePath = path_1.default.join(dirPath, `${fileName}.ts`);
+            const dirPath = path.join(outDir || path.resolve('src/api'), dirName);
+            const fullFilePath = path.join(dirPath, `${fileName}.ts`);
             let codeStr = '';
-            if (!(yield (0, tools_js_1.checkExists)(fullFilePath))) {
+            if (!(yield checkExists(fullFilePath))) {
                 codeStr =
                     fileHeader ||
                         `import * as models from '@/model';\nimport request from '@/utils/request';\n`;
@@ -211,7 +205,7 @@ class NoApi {
                 const api = apiCollections[method];
                 // 入参类型名称
                 let inTypeName = '';
-                const pathParams = (0, tools_js_1.parsePathParams)(url);
+                const pathParams = parsePathParams(url);
                 // 入参
                 if (api.parameters) {
                     // query path body
@@ -230,7 +224,7 @@ class NoApi {
                             //   }
                             const definitionKey = (_b = (_a = param.schema) === null || _a === void 0 ? void 0 : _a.$ref) === null || _b === void 0 ? void 0 : _b.replace('#/definitions/', '');
                             if (definitionKey) {
-                                inTypeName = (0, tools_js_1.formatObjName)(definitionKey);
+                                inTypeName = formatObjName(definitionKey);
                                 defTodo.push(definitionKey);
                             }
                         }
@@ -263,10 +257,10 @@ class NoApi {
                     });
                     // 生成query类型
                     if (queryParams.length > 0) {
-                        inTypeName = `${(0, tools_js_1.upperFirst)(fileName)}${(0, tools_js_1.upperFirst)(funcName)}Query`;
-                        const interfaceCode = (0, transform_js_1.transformTypeInterfaceCode)(queryParams, inTypeName);
+                        inTypeName = `${upperFirst(fileName)}${upperFirst(funcName)}Query`;
+                        const interfaceCode = transformTypeInterfaceCode(queryParams, inTypeName);
                         const queryFileName = `${inTypeName}.ts`;
-                        const filePath = path_1.default.join(this.config.definition.outDir, 'query', queryFileName);
+                        const filePath = path.join(this.config.definition.outDir, 'query', queryFileName);
                         receiveHandler({
                             sourceType: 'definition',
                             sourceCode: interfaceCode,
@@ -293,8 +287,8 @@ class NoApi {
                     method,
                     url,
                     pathParams,
-                    inType: inTypeName ? (0, tools_js_1.defPrefix)(inTypeName) : undefined,
-                    outType: (0, tools_js_1.defPrefix)(resRef ? (0, tools_js_1.formatObjName)(resRef) : 'any'),
+                    inType: inTypeName ? defPrefix(inTypeName) : undefined,
+                    outType: defPrefix(resRef ? formatObjName(resRef) : 'any'),
                     comment: api.summary,
                 };
                 // 生成api函数
@@ -307,7 +301,7 @@ class NoApi {
                     let paramStr = inType ? `data: ${inType}` : '';
                     let urlStr = `'${url}'`;
                     if ((pathParams === null || pathParams === void 0 ? void 0 : pathParams.length) > 0) {
-                        let codeStr = pathParams.map(transform_js_1.transformTypeFieldCode).join('\n');
+                        let codeStr = pathParams.map(transformTypeFieldCode).join('\n');
                         paramStr = `params: {\n${codeStr}\n}`;
                         urlStr = `\`${url}\``;
                     }
@@ -335,7 +329,7 @@ class NoApi {
             console.log('===== [api]', fullFilePath, '\n');
             receiveHandler({
                 sourceType: 'api',
-                sourceCode: yield (0, tools_js_1.codeFormat)(codeStr),
+                sourceCode: yield codeFormat(codeStr),
                 fileName,
                 filePath: fullFilePath,
             });
@@ -359,7 +353,7 @@ class NoApi {
             }
             const definitionCollection = this.config.swJson.definitions[definitionKey];
             if (!definitionCollection) {
-                (0, tools_js_1.exitWithError)(`${definitionKey} 不存在！`);
+                exitWithError(`${definitionKey} 不存在！`);
             }
             // 忽略一些类型：List等
             ['List'].forEach((ignoreType) => {
@@ -369,7 +363,7 @@ class NoApi {
                         definitionKey;
             });
             // 对象名称
-            let objName = aliasName || (0, tools_js_1.formatObjName)(definitionKey);
+            let objName = aliasName || formatObjName(definitionKey);
             // 去掉泛型（尖括号里面的类型）
             const idx = objName.indexOf('<');
             if (idx > -1) {
@@ -377,7 +371,7 @@ class NoApi {
             }
             const { required, properties, description: objDesc } = definitionCollection;
             const { outDir, include, exclude, match } = this.config.definition;
-            const filePath = path_1.default.join(outDir, `${objName}.ts`);
+            const filePath = path.join(outDir, `${objName}.ts`);
             // 过滤一些不合法类型
             if (!objName ||
                 !properties ||
@@ -410,7 +404,7 @@ class NoApi {
                     // FIXME: 可能造成死循环
                     console.log('递归生成', this.defKeyDone, subDefinitionKey, this.defKeyDone.has(subDefinitionKey));
                     if (this.defKeyDone.has(subDefinitionKey)) {
-                        tsType = (0, tools_js_1.parseToTsType)(property).replace('models.', '');
+                        tsType = parseToTsType(property).replace('models.', '');
                     }
                     else {
                         yield this.generateDefinitionCode(subDefinitionKey, receiveHandler);
@@ -418,15 +412,15 @@ class NoApi {
                         if (definitionKey.includes(`«${subDefinitionKey}»`)) {
                             if (!refList.includes(hasRef)) {
                                 refList.push(hasRef);
-                                tsType = definition_js_1.GENERIC_TYPE_NAMES[++genericIndex];
+                                tsType = GENERIC_TYPE_NAMES[++genericIndex];
                                 genericTypes.push(tsType);
                             }
                             else {
-                                tsType = definition_js_1.GENERIC_TYPE_NAMES[genericIndex];
+                                tsType = GENERIC_TYPE_NAMES[genericIndex];
                             }
                         }
                         else {
-                            tsType = (0, tools_js_1.formatObjName)(subDefinitionKey);
+                            tsType = formatObjName(subDefinitionKey);
                             // 导入外部类型
                             const importStr = `import ${tsType} from './${tsType}'`;
                             if (!codeStr.includes(importStr)) {
@@ -437,7 +431,7 @@ class NoApi {
                     }
                 }
                 else {
-                    tsType = (0, tools_js_1.parseToTsType)(property);
+                    tsType = parseToTsType(property);
                 }
                 const isRequired = required === null || required === void 0 ? void 0 : required.includes(propKey);
                 // 过滤掉一些非法字符 如：key[]
@@ -462,7 +456,7 @@ class NoApi {
             }
             console.log('===== [model]', filePath);
             receiveHandler({
-                sourceCode: yield (0, tools_js_1.codeFormat)(codeStr),
+                sourceCode: yield codeFormat(codeStr),
                 typeName: objName,
                 fileName: objName,
                 filePath,
@@ -471,19 +465,17 @@ class NoApi {
         });
     }
 }
-function createNoApi(config) {
+export function createNoApi(config) {
     if (!(config === null || config === void 0 ? void 0 : config.swUrl) && !(config === null || config === void 0 ? void 0 : config.swFile)) {
-        (0, tools_js_1.exitWithError)('swUrl和swFile至少配置一个！');
+        exitWithError('swUrl和swFile至少配置一个！');
     }
     return new NoApi(config);
 }
-exports.createNoApi = createNoApi;
 /**
  * 定义配置
  * @param config
  * @returns
  */
-function definedNoApiConfig(config) {
+export function definedNoApiConfig(config) {
     return config;
 }
-exports.definedNoApiConfig = definedNoApiConfig;

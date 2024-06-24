@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "types": "es/index.d.ts",
+  "module": "es/index.ts",
   "bin": {
     "noapi": "lib/cli.js"
   },
   "files": [
-    "lib"
+    "dist",
+    "es"
   ],
   "publishConfig": {
     "registry": "https://maven.xiujiadian.com/repository/zmn_npm/"
