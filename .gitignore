@@ -5,6 +5,7 @@ lib/
 .history/
 testOutput/
 definitions/
+playground/
 
 # local env files
 .env.local
@@ -29,3 +30,5 @@ src/.main.js
 androidPrivacy.json
 .vscode-swan/settings.json
 hs_err_pid3588.log
+noapi.config.js
+noapi-swagger-doc.json

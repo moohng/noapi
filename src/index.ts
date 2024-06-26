@@ -1,9 +1,20 @@
 /*
- * @Author: mohong@zmn.cn
+* @Author: mohong@zmn.cn
  * @Date: 2024-04-16 14:25:42
- * @LastEditTime: 2024-06-22 16:52:10
+ * @LastEditTime: 2024-06-26 11:44:00
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口
- */
+*/
+import { NoApiConfig } from './types';
+
 export * from './noapi';
 export * from './utils/tools';
+
+/**
+ * 定义配置
+ * @param config
+ * @returns
+ */
+export function definedNoApiConfig(config: NoApiConfig) {
+  return config;
+}

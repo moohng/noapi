@@ -1,27 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-24 16:44:59
+ * @LastEditTime: 2024-06-26 12:01:30
  * @LastEditors: mohong@zmn.cn
  * @Description: 入口函数
  */
 import path from 'path';
-import fetch from 'node-fetch';
-import {
-  ApiContext,
-  SWApiMethod,
-  ApiOptions,
-  SWPathApiCollections,
-  formatNameByUrl,
-  GenerateApiResult,
-} from './utils/api';
-import {
-  ApiParameter,
-  GENERIC_TYPE_NAMES,
-  GenerateDefinitionResult,
-  SWDefinitionCollections,
-  writeToIndexFile,
-} from './utils/definition';
+// import fetch from 'node-fetch';
 import {
   appendToFile,
   checkExists,
@@ -29,38 +14,17 @@ import {
   defPrefix,
   exitWithError,
   formatObjName,
-  parsePathParams,
   parseToTsType,
   upperFirst,
   writeToFile,
+  writeToIndexFile,
 } from './utils/tools';
-import { TypeFieldOption, transformTypeFieldCode, transformTypeInterfaceCode } from './utils/transform';
+import { transformTypeInterfaceCode } from './core/transform';
+import { parseUrl } from './core/parse';
+import { printApi } from './core/print';
+import { ApiContext, ApiInfo, ApiParameter, GenerateApiResult, GenerateDefinitionResult, NoApiConfig, SWApiMethod, SWJson, TypeFieldOption } from './types';
 
-interface SWJson {
-  swagger: string;
-  info: { title: string };
-  host: string;
-  basePath?: string;
-  tags: Array<{ name: string; description: string }>;
-  paths: SWPathApiCollections;
-  definitions: SWDefinitionCollections;
-}
-
-export interface NoApiConfig extends ApiOptions {
-  swUrl?: string;
-  swFile?: string;
-  cookie?: string;
-  swJson?: SWJson;
-}
-
-export interface ApiInfo {
-  tag?: string;
-  title: string;
-  url: string;
-  method: string;
-  parameters: string;
-  responses: string;
-}
+const GENERIC_TYPE_NAMES = ['T', 'K', 'U', 'V'];
 
 class NoApi {
   private config: NoApiConfig;
@@ -121,14 +85,14 @@ class NoApi {
     try {
       if (Array.isArray(urls)) {
         urls.forEach((item: any) => {
-          this.generateApiCode(
+          this.printApiCode(
             item.url ? item : { url: item as string },
             receiveHandler
           );
         });
       } else {
         const { url, filePath, funcName, method } = urls;
-        this.generateApiCode(
+        this.printApiCode(
           { url, filePath, funcName, method },
           receiveHandler
         );
@@ -149,19 +113,22 @@ class NoApi {
 
     console.log('开始生成类型定义...');
 
-    const receiveHandler = ({
+    const resultFiles: string[] = [];
+
+    const receiveHandler = async ({
       sourceCode,
       filePath,
       typeName,
       outDir,
     }: GenerateDefinitionResult) => {
-      writeToFile(filePath, sourceCode);
-      writeToIndexFile(typeName, outDir);
+      await writeToFile(filePath, sourceCode);
+      await writeToIndexFile(typeName, outDir);
+      resultFiles.push(filePath);
     };
 
-    defs.forEach((defKey, index) => {
-      this.generateDefinitionCode(defKey, receiveHandler, alias?.[index]);
-    });
+    await Promise.all(defs.map((defKey, index) => this.printDefinitionCode(defKey, receiveHandler, alias?.[index])));
+
+    return resultFiles;
   }
 
   /**
@@ -191,7 +158,7 @@ class NoApi {
         return {
           url,
           tag: api.tags?.join('；'),
-          title: api.summary || url,
+          summary: api.summary || url,
           method: method.toUpperCase(),
           parameters: JSON.stringify(api.parameters),
           responses: JSON.stringify(api.responses),
@@ -249,7 +216,7 @@ class NoApi {
    * 生成api方法
    * @param url
    */
-  public async generateApiCode(
+  public async printApiCode(
     {
       url,
       method: onlyMethod,
@@ -261,7 +228,7 @@ class NoApi {
       filePath?: string;
       funcName?: string;
     },
-    receiveHandler: (result: GenerateApiResult | GenerateDefinitionResult) => void
+    receiveHandler: (result: GenerateApiResult | GenerateDefinitionResult) => void | Promise<void>
   ) {
     const apiCollections = this.config.swJson!.paths![url];
     if (!apiCollections) {
@@ -276,29 +243,18 @@ class NoApi {
 
     const { transformApi, customApi, fileHeader, outDir } = this.config;
 
-    let { funcName: defaultFuncName, fileName, dirName } = formatNameByUrl(url);
+    let { funcName: defaultFuncName, fileName, dirName, pathStrParams } = parseUrl(url);
     funcName = funcName || defaultFuncName;
-    if (filePath) {
-      const { dir, name } = path.parse(filePath);
 
-      dirName = dir || dirName;
-      fileName = name || fileName;
-    }
     console.log(
       `===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`
     );
 
     const defTodo: string[] = [];
+    const pathParams: TypeFieldOption[] = pathStrParams.map(item => ({ name: item, required: true }));
 
-    // 创建目录 TODO:默认输出目录待验证
-    const dirPath = path.join(outDir || path.resolve('src/api'), dirName);
-    const fullFilePath = path.join(dirPath, `${fileName}.ts`);
+    // 代码
     let codeStr = '';
-    if (!(await checkExists(fullFilePath))) {
-      codeStr =
-        fileHeader ||
-        `import * as models from '@/model';\nimport request from '@/utils/request';\n`;
-    }
 
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
 
@@ -311,7 +267,6 @@ class NoApi {
 
       // 入参类型名称
       let inTypeName = '';
-      const pathParams: TypeFieldOption[] = parsePathParams(url);
       // 入参
       if (api.parameters) {
         // query path body
@@ -407,30 +362,7 @@ class NoApi {
       if (typeof customApi === 'function') {
         apiFuncStr = customApi(apiContext);
       } else {
-        const { inType, outType, comment, name, url, method, pathParams } = apiContext;
-        let paramStr = inType ? `data: ${inType}` : '';
-        let urlStr = `'${url}'`;
-        if (pathParams?.length! > 0) {
-          let codeStr = pathParams!.map(transformTypeFieldCode).join('\n');
-          paramStr = `params: {\n${codeStr}\n}`;
-          urlStr = `\`${url}\``;
-        }
-        const resStr = outType?.includes('List<')
-          ? `${outType.match(/List<(.*)>/)![1]}[]`
-          : outType;
-        apiFuncStr = `
-export function ${name}(${paramStr}) {
-  return request<${resStr}>({ url: ${urlStr},${
-    inType ? ' data,' : ''
-  } method: '${method.toUpperCase()}' });
-}
-`;
-        if (comment) {
-          apiFuncStr = `
-/**
- * ${comment || ''}
- */` + apiFuncStr;
-        }
+        apiFuncStr = printApi(apiContext);
       }
 
       if (typeof transformApi === 'function') {
@@ -439,6 +371,15 @@ export function ${name}(${paramStr}) {
 
       codeStr += apiFuncStr;
     });
+
+    // 创建目录 TODO:默认输出目录待验证
+    const dirPath = path.join(outDir || path.resolve('src/api'), dirName);
+    const fullFilePath = filePath || path.join(dirPath, `${fileName}.ts`);
+    if (!(await checkExists(fullFilePath))) {
+      codeStr =
+        fileHeader ||
+        `import * as models from '@/model';\nimport request from '@/utils/request';\n` + codeStr;
+    }
 
     console.log('===== [api]', fullFilePath, '\n');
 
@@ -450,7 +391,7 @@ export function ${name}(${paramStr}) {
     });
 
     defTodo.forEach((defKey) => {
-      this.generateDefinitionCode(defKey, (result) =>
+      this.printDefinitionCode(defKey, (result) =>
         receiveHandler({ sourceType: 'definition', ...result })
       );
     });
@@ -462,9 +403,9 @@ export function ${name}(${paramStr}) {
    * @param aliasName
    * @returns
    */
-  public async generateDefinitionCode(
+  public async printDefinitionCode(
     definitionKey: string,
-    receiveHandler: (result: GenerateDefinitionResult) => void,
+    receiveHandler: (result: GenerateDefinitionResult) => void | Promise<void>,
     aliasName?: string
   ) {
     const keepOuter = false;
@@ -549,7 +490,7 @@ export function ${name}(${paramStr}) {
         if (this.defKeyDone.has(subDefinitionKey)) {
           tsType = parseToTsType(property).replace('models.', '');
         } else {
-          await this.generateDefinitionCode(subDefinitionKey, receiveHandler);
+          await this.printDefinitionCode(subDefinitionKey, receiveHandler);
 
           // 泛型
           if (definitionKey.includes(`«${subDefinitionKey}»`)) {
@@ -608,7 +549,7 @@ export function ${name}(${paramStr}) {
 
     console.log('===== [model]', filePath);
 
-    receiveHandler({
+    await receiveHandler({
       sourceCode: await codeFormat(codeStr),
       typeName: objName,
       fileName: objName,
@@ -618,18 +559,14 @@ export function ${name}(${paramStr}) {
   }
 }
 
+/**
+ * 创建NoApi实例
+ * @param config 
+ * @returns 
+ */
 export function createNoApi(config: NoApiConfig) {
   if (!config?.swUrl && !config?.swFile) {
     exitWithError('swUrl和swFile至少配置一个！');
   }
   return new NoApi(config);
-}
-
-/**
- * 定义配置
- * @param config
- * @returns
- */
-export function definedNoApiConfig(config: NoApiConfig) {
-  return config;
 }

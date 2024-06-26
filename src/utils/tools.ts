@@ -1,16 +1,15 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-24 16:43:15
+ * @LastEditTime: 2024-06-26 11:44:52
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
 import path from 'path';
 import fs from 'fs/promises';
+import { NoApiConfig, TypeFieldOption } from '@/types';
 // import * as prettier from 'prettier';
 // import standard from 'standard';
-import { NoApiConfig } from '..';
-import { TypeFieldOption } from './transform';
 
 /**
  * 去掉后端对象名中的非法字符
@@ -252,4 +251,37 @@ export function parsePathParams(url: string): TypeFieldOption[] {
  */
 export function upperFirst(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * 写入到index.ts
+ * @param typeName 
+ * @param outDir 
+ * @returns 
+ */
+export async function writeToIndexFile(typeName: string, outDir: string, filePath?: string) {
+
+  const defFilePath = path.join(outDir, 'index.ts');
+
+  let relativePath = filePath? path.relative(outDir, path.dirname(filePath)) : `.`;
+  if (!relativePath.startsWith('.')) {
+    relativePath = `./${relativePath}`;
+  }
+
+  // 新建
+  if (!await checkExists(defFilePath)) {
+    await fs.mkdir(path.dirname(defFilePath), { recursive: true });
+    await fs.writeFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
+
+    return defFilePath;
+  }
+
+  let defFileContent = await fs.readFile(defFilePath, 'utf-8');
+  // 判断是否已经导入
+  if (defFileContent.indexOf(typeName) === -1) {
+    // 追加
+    await fs.appendFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
+  }
+
+  return defFilePath;
 }

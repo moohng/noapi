@@ -1,6 +1,6 @@
 import { program } from 'commander';
-import { createNoApi } from './noapi.js';
-import { createConfig, exitWithError, mergeConfig, writeToFile } from './utils/tools.js';
+import { createNoApi } from '../noapi.js';
+import { createConfig, exitWithError, mergeConfig, writeToFile } from '../utils/tools.js';
 import * as readline from 'readline/promises';
 import path from 'path';
 

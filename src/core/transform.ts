@@ -1,30 +1,22 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-06-21 16:20:22
- * @LastEditTime: 2024-06-22 16:52:22
+ * @LastEditTime: 2024-06-26 11:45:35
  * @LastEditors: mohong@zmn.cn
  * @Description: 类型转换
  */
-import { SWDefinitionProperty, parseToTsType } from './tools';
-
-/**
- * 类型字段选项
- */
-export interface TypeFieldOption {
-  name: string;
-  type?: string;
-  required?: boolean;
-  description?: string;
-  minLength?: number;
-  maxLength?: number;
-}
+import { TypeFieldOption } from '@/types';
+import { SWDefinitionProperty, parseToTsType } from '../utils/tools';
 
 /**
  * 生成类型字段代码
  * @param obj 
  * @returns 
  */
-export function transformTypeFieldCode(obj: TypeFieldOption) {
+export function transformTypeFieldCode(obj: TypeFieldOption | string) {
+  if (typeof obj ==='string') {
+    obj = { name: obj, required: true };
+  }
   const tsType = parseToTsType(obj as SWDefinitionProperty);
   let codeStr = `  ${obj.name.replace(/\W/g, '')}${obj.required ? '' : '?'}: ${tsType};`;
 
