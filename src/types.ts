@@ -92,6 +92,7 @@ export interface NoApiLocalConfig extends NoApiConfig {
   apiBase?: string;
   defBase?: string;
   swFile?: string;
+  fileHeader?: string;
 }
 
 export interface ApiInfo {

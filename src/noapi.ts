@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-26 15:51:41
+ * @LastEditTime: 2024-06-26 17:15:39
  * @LastEditors: mohong@zmn.cn
  * @Description: NoApi 核心对象
  */
@@ -40,10 +40,6 @@ class NoApi {
 
   constructor(config: NoApiConfig) {
     this.config = config;
-
-    if (config.swUrl) {
-      this.fetchDataSource();
-    }
   }
 
   get swJson() {
@@ -340,12 +336,7 @@ class NoApi {
     });
 
     // 创建目录 TODO:默认输出目录待验证
-    const fileDir = `${dirName}/${fileName}.ts`;
-    // if (!(await checkExists(fullFilePath))) {
-    //   codeStr =
-    //     fileHeader ||
-    //     `import * as models from '@/model';\nimport request from '@/utils/request';\n` + codeStr;
-    // }
+    const fileDir = (dirName ? dirName + '/' : '') + `${fileName}.ts`;
 
     console.log('===== [api]', fileDir, '\n');
 
@@ -402,25 +393,26 @@ class NoApi {
     }
 
     const { required, properties, description: objDesc } = definitionCollection;
-    const { include, exclude, match } = this.config.definition!;
 
-    const fileDir = `${objName}.ts`;
-
-    // 过滤一些不合法类型
-    if (
-      !objName ||
-      !properties ||
-      /^[a-z]/.test(objName) ||
-      exclude?.some((item) =>
-        item instanceof RegExp ? item.test(definitionKey) : item === objName
-      ) ||
-      (include &&
-        !include.some((item) =>
-          item instanceof RegExp ? item.test(definitionKey) : item === objName
-        )) ||
-      (match && !match.test(definitionKey))
-    ) {
+    if (!objName || !properties || /^[a-z]/.test(objName)) {
       return;
+    }
+
+    if (this.config.definition) {
+      const { include, exclude, match } = this.config.definition;
+      // 过滤一些不合法类型
+      if (
+        exclude?.some((item) =>
+          item instanceof RegExp ? item.test(definitionKey) : item === objName
+        ) ||
+        (include &&
+          !include.some((item) =>
+            item instanceof RegExp ? item.test(definitionKey) : item === objName
+          )) ||
+        (match && !match.test(definitionKey))
+      ) {
+        return;
+      }
     }
 
     this.defKeyDone.add(definitionKey);
@@ -516,6 +508,8 @@ class NoApi {
         `interface ${objName}<${genericTypes.join(', ')}>`
       );
     }
+
+    const fileDir = `${objName}.ts`;
 
     console.log('===== [model]', fileDir);
 

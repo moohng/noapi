@@ -25,7 +25,7 @@ export async function checkExists(path: string): Promise<boolean> {
  */
 export async function writeToFile(filePath: string, content: string) {
   // 创建输出文件
-  const exists = await checkExists(filePath);
+  const exists = await checkExists(path.dirname(filePath));
   if (!exists) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
   }
@@ -63,7 +63,7 @@ export async function writeToIndexFile(typeName: string, outDir: string, filePat
 
   let relativePath = filePath? path.relative(outDir, path.dirname(filePath)) : `.`;
   if (!relativePath.startsWith('.')) {
-    relativePath = `./${relativePath}`;
+    relativePath = relativePath ? `./${relativePath}` : '.';
   }
 
   // 新建

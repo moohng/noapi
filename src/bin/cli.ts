@@ -1,10 +1,10 @@
 import { program } from 'commander';
-import { createNoApi } from '@/noapi.js';
-import { exitWithError } from '@/utils/tools.js';
+import { createNoApi } from '../noapi.js';
+import { exitWithError } from '../utils/tools.js';
 import * as readline from 'readline/promises';
 import path from 'path';
-import { appendToFile, writeToFile, writeToIndexFile } from '@/utils/write.js';
-import { createConfig, mergeConfig } from '@/utils/config.js';
+import { appendToFile, checkExists, writeToFile, writeToIndexFile } from '../utils/write.js';
+import { createConfig, mergeConfig } from '../utils/config.js';
 
 program
   .version('1.0.0')
@@ -24,12 +24,24 @@ program
   .action(async (urls, options) => {
     console.log('开始运行...');
 
-    const { swFile, apiBase = './src/api', defBase = './src/models', ...config } = mergeConfig(options);
-    if (!config.swUrl && swFile) {
-      config.swJson = require(swFile);
+    const { swFile, apiBase = './src/api', defBase = './src/models', fileHeader, ...config } = mergeConfig(options);
+    if (!options.swUrl && swFile) {
+      try {
+        config.swJson = require(path.resolve(swFile));
+      } catch (error) {
+        if (!config.swUrl) {
+          exitWithError('获取swagger文档失败，请提供本地或在线文档！');
+        }
+      }
     }
 
     const noapi = createNoApi(config);
+
+    if (!noapi.swJson) {
+      const result = await noapi.fetchDataSource();
+      const swFilePath = path.resolve(swFile || 'noapi-swagger-doc.json');
+      await writeToFile(swFilePath, JSON.stringify(result, null, 2));
+    }
 
     urls = urls?.split(',').map((url: string) => `/${url}`);
 
@@ -48,9 +60,12 @@ program
       exitWithError('请提供url地址');
     }
 
-    noapi.generateByUrls(urls, ({ sourceType, sourceCode, fileDir, typeName }) => {
+    noapi.generateByUrls(urls, async ({ sourceType, sourceCode, fileDir, typeName }) => {
       if (sourceType === 'api') {
         const filePath = path.resolve(apiBase, fileDir);
+        if (!await checkExists(filePath)) {
+          sourceCode = fileHeader || `import * as models from '@/model';\nimport request from '@/utils/request';\n` + sourceCode;
+        }
         appendToFile(filePath, sourceCode);
       } else {
         const filePath = path.resolve(defBase, fileDir);
@@ -62,23 +77,34 @@ program
 
 // def命令
 program
-  .command('def <defKeys> <alias>')
+  .command('def <defKeys>')
   .description('生成类型定义，defKeys可通过api命令加-l参数获取')
   .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
-  .action(async (defKeys: string, alias: string, options) => {
+  .action(async (defKeys: string, options) => {
     console.log('开始运行...');
 
     const { swFile, defBase = './src/models', ...config } = mergeConfig(options);
-    if (!config.swUrl && swFile) {
-      config.swJson = require(swFile);
+    if (!options.swUrl && swFile) {
+      try {
+        config.swJson = require(path.resolve(swFile));
+      } catch (error) {
+        if (!config.swUrl) {
+          exitWithError('获取swagger文档失败，请提供本地或在线文档！');
+        }
+      }
     }
 
     const noapi = createNoApi(config);
 
-    const aliases = alias.split(',').map((a) => a.trim());
+    if (!noapi.swJson) {
+      const result = await noapi.fetchDataSource();
+      const swFilePath = path.resolve(swFile || 'noapi-swagger-doc.json');
+      await writeToFile(swFilePath, JSON.stringify(result, null, 2));
+    }
+
     noapi.generateByDefs(
-      defKeys.split(',').map((key, index) => ({ key, typeName: aliases[index] })),
+      defKeys.split(',').map((key) => ({ key })),
       ({ sourceCode, fileDir, typeName }) => {
         const filePath = path.resolve(defBase, fileDir);
         writeToFile(filePath, sourceCode);
@@ -97,7 +123,7 @@ program
       output: process.stdout,
     });
     const swUrl = await rl.question('请输入swagger文档地址(swUrl): ');
-    const configFile = createConfig(swUrl);
+    const configFile = await createConfig(swUrl);
     rl.close();
 
     console.log(`配置文件${configFile}已生成，可自定义配置.`);

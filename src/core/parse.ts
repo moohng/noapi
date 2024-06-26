@@ -1,5 +1,5 @@
 import { SWDefinitionProperty } from '@/types';
-import { formatObjName } from '@/utils/tools';
+import { formatObjName } from '../utils/tools';
 
 /**
  * 解析URL路径
