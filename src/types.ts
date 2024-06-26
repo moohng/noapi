@@ -62,18 +62,12 @@ export interface SWJson {
 
 // ============ NoApi 配置 ============
 export interface GenerateDefinitionOptions {
-  outDir: string;
   include?: (string | RegExp)[];
   exclude?: (string | RegExp)[];
   match?: RegExp;
 }
 
 export interface ApiOptions {
-  outDir?: string;
-  /**
-   * 文件头部信息，import 信息
-   */
-  fileHeader?: string;
   /**
    * 自定义生成api方法
    */
@@ -90,7 +84,6 @@ export interface ApiOptions {
 
 export interface NoApiConfig extends ApiOptions {
   swUrl?: string;
-  swFile?: string;
   cookie?: string;
   swJson?: SWJson;
 }
@@ -135,13 +128,23 @@ export interface GenerateApiResult {
   sourceType: 'api' | 'definition';
   sourceCode: string;
   fileName: string;
-  filePath: string;
+  fileDir: string;
 }
 
 export interface GenerateDefinitionResult {
   sourceCode: string;
   typeName: string;
   fileName: string;
-  filePath: string;
-  outDir: string;
+  fileDir: string;
+}
+
+export interface PrintApiCodeOption {
+  url: string;
+  method?: string;
+  funcName?: string;
+}
+
+export interface PrintDefinitionCodeOption {
+  key: string;
+  typeName?: string;
 }
