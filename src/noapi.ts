@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-26 14:42:10
+ * @LastEditTime: 2024-06-26 15:51:41
  * @LastEditors: mohong@zmn.cn
  * @Description: NoApi 核心对象
  */
@@ -10,11 +10,10 @@ import {
   defPrefix,
   exitWithError,
   formatObjName,
-  parseToTsType,
   upperFirst,
 } from './utils/tools';
 import { transformTypeInterfaceCode } from './core/transform';
-import { parseUrl } from './core/parse';
+import { parseToTsType, parseUrl } from './core/parse';
 import { printApi } from './core/print';
 import {
   ApiContext,
@@ -58,7 +57,7 @@ class NoApi {
   async generateByUrls(
     urls: (string | PrintApiCodeOption)[],
     receiveHandler: (
-      result: GenerateApiResult | GenerateDefinitionResult
+      result: GenerateApiResult & Partial<GenerateDefinitionResult>
     ) => void | Promise<void>
   ) {
     console.log('开始生成api函数...');
@@ -183,7 +182,7 @@ class NoApi {
   public async printApiCode(
     { url, method: onlyMethod, funcName }: PrintApiCodeOption,
     receiveHandler: (
-      result: GenerateApiResult | GenerateDefinitionResult
+      result: GenerateApiResult & Partial<GenerateDefinitionResult>
     ) => void | Promise<void>
   ) {
     const apiCollections = this.config.swJson!.paths![url];
@@ -297,7 +296,7 @@ class NoApi {
             fileName: queryFileName,
             fileDir,
             typeName: inTypeName,
-          } as GenerateDefinitionResult);
+          });
         }
       }
 

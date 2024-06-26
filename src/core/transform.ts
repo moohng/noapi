@@ -1,12 +1,12 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-06-21 16:20:22
- * @LastEditTime: 2024-06-26 11:45:35
+ * @LastEditTime: 2024-06-26 14:50:21
  * @LastEditors: mohong@zmn.cn
  * @Description: 类型转换
  */
-import { TypeFieldOption } from '@/types';
-import { SWDefinitionProperty, parseToTsType } from '../utils/tools';
+import { SWDefinitionProperty, TypeFieldOption } from '@/types';
+import { parseToTsType } from './parse';
 
 /**
  * 生成类型字段代码

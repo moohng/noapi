@@ -88,6 +88,12 @@ export interface NoApiConfig extends ApiOptions {
   swJson?: SWJson;
 }
 
+export interface NoApiLocalConfig extends NoApiConfig {
+  apiBase?: string;
+  defBase?: string;
+  swFile?: string;
+}
+
 export interface ApiInfo {
   tag?: string;
   summary: string;
@@ -147,4 +153,11 @@ export interface PrintApiCodeOption {
 export interface PrintDefinitionCodeOption {
   key: string;
   typeName?: string;
+}
+
+export interface SWDefinitionProperty {
+  type?: 'string' | 'integer' | 'boolean' | 'object' | 'array';
+  items?: SWDefinitionProperty,
+  description?: string;
+  $ref?: string;
 }

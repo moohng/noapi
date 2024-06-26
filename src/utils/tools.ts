@@ -1,13 +1,10 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 09:45:06
- * @LastEditTime: 2024-06-26 11:44:52
+ * @LastEditTime: 2024-06-26 15:14:57
  * @LastEditors: mohong@zmn.cn
  * @Description: 工具函数
  */
-import path from 'path';
-import fs from 'fs/promises';
-import { NoApiConfig, TypeFieldOption } from '@/types';
 // import * as prettier from 'prettier';
 // import standard from 'standard';
 
@@ -26,53 +23,6 @@ export function formatObjName(objName: string, keepOuter = false) {
     name = name.match(/<(.+)>/)?.[1] || name;
   }
   return name;
-}
-
-export interface SWDefinitionProperty {
-  type?: 'string' | 'integer' | 'boolean' | 'object' | 'array';
-  items?: SWDefinitionProperty,
-  description?: string;
-  $ref?: string;
-}
-
-/**
- * 解析属性类型
- * @param {SWDefinitionProperty} property
- * @returns
- */
-export function parseToTsType(property?: string | SWDefinitionProperty): string {
-  if (typeof property !== 'string') {
-    // 数组类型
-    if (property?.type === 'array') {
-      const subType = property.items ? parseToTsType(property.items) : 'any';
-      return `${subType}[]`;
-    }
-
-    // 对象引用
-    if (property?.$ref) {
-      const name = formatObjName(property.$ref);
-      return `models.${name}`;
-    }
-
-    property = property?.type;
-  }
-
-  const map = {
-    string: 'string',
-    integer: 'number',
-    boolean: 'boolean',
-    object: 'object',
-  };
-
-  return map[property as keyof typeof map] || 'any';
-}
-
-/**
- * 首字母大写
- * @param str
- */
-export function upperFirstLatter(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**
@@ -94,74 +44,17 @@ export function defPrefix(type: string) {
 }
 
 /**
- * 加载配置项
- * @returns 
- */
-export function loadConfig(configRootPath = process.cwd(), loader = (filePath: string) => require(filePath)): NoApiConfig | undefined {
-  const configFilePath = path.join(configRootPath, 'noapi.config.js');
-  let config: NoApiConfig;
-  try {
-    config = loader(configFilePath);
-  } catch (error) {
-    console.error('Error:', error);
-    return undefined;
-  }
-  return config;
-}
-
-/**
- * 合并配置项
- * @param options 
- * @returns 
- */
-export function mergeConfig(options: any) {
-  // 过滤掉空值
-  options = Object.fromEntries(Object.entries(options).filter((item) => item[1] !== undefined));
-  const config = {
-    ...(loadConfig() || {}),
-    ...options,
-  };
-
-  return config;
-}
-
-/**
  * 报错并退出
  * @param message
  */
 export function exitWithError(...messages: string[]) {
   console.error('Error:', ...messages);
-  process.exit(1);
-}
-
-/**
- * 创建配置文件
- * @param url 接口文档地址
- * @param rootDir 项目根目录
- * @returns
- */
-export async function createConfig(url?: string, rootDir = process.cwd()) {
-  const configFilePath = path.resolve(rootDir, 'noapi.config.js');
-
-  if (await checkExists(configFilePath)) {
-    exitWithError('配置文件已存在！');
+  // 如果是nodejs环境，退出程序
+  if (typeof process !== 'undefined' && process.exit) {
+    process.exit(1);
+  } else {
+    throw new Error(messages.join('\n'));
   }
-
-  const fileHeader = `const { definedNoApiConfig } = require('@zmn/noapi');\n`;
-
-  const defaultConfig = `{
-    swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
-    outDir: './src/api',
-    definition: {
-      outDir: './src/model',
-    },
-  }`;
-
-  const configInput = await codeFormat(`${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`);
-
-  await writeToFile(configFilePath, configInput);
-
-  return configFilePath;
 }
 
 /**
@@ -182,106 +75,10 @@ export async function codeFormat(code: string) {
 }
 
 /**
- * 写入文件
- * @param filePath 
- * @param content 
- */
-export async function writeToFile(filePath: string, content: string) {
-  // 创建输出文件
-  const exists = await checkExists(filePath);
-  if (!exists) {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-  }
-
-  // 生成文件
-  return fs.writeFile(filePath, content, 'utf8');
-}
-
-/**
- * 追加内容到文件
- * @param filePath 
- * @param content 
- * @returns 
- */
-export async function appendToFile(filePath: string, content: string) {
-  // 创建输出文件
-  const exists = await checkExists(filePath);
-  if (!exists) {
-    return writeToFile(filePath, content);
-  }
-
-  // 追加内容
-  return fs.appendFile(filePath, content, 'utf8');
-}
-
-/**
- * 检查文件或目录是否存在
- * @param path 
- * @returns 
- */
-export async function checkExists(path: string): Promise<boolean> {
-  try {
-    await fs.stat(path);
-    return true; // 文件或目录存在
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      return false; // 文件或目录不存在
-    }
-    throw error; // 如果是其他错误，抛出该错误
-  }
-}
-
-/**
- * 解析路径参数
- * @param url 
- * @returns 
- */
-export function parsePathParams(url: string): TypeFieldOption[] {
-  const params = url.match(/\/\{([a-zA-Z0-9]+)\}/g);
-  if (params) {
-    return params.map((item) => ({ name: item.replace(/\/|\{|\}/g, ''), required: true, type: 'string' }));
-  }
-  return [];
-}
-
-/**
  * 首字母大写
  * @param str 
  * @returns 
  */
 export function upperFirst(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/**
- * 写入到index.ts
- * @param typeName 
- * @param outDir 
- * @returns 
- */
-export async function writeToIndexFile(typeName: string, outDir: string, filePath?: string) {
-
-  const defFilePath = path.join(outDir, 'index.ts');
-
-  let relativePath = filePath? path.relative(outDir, path.dirname(filePath)) : `.`;
-  if (!relativePath.startsWith('.')) {
-    relativePath = `./${relativePath}`;
-  }
-
-  // 新建
-  if (!await checkExists(defFilePath)) {
-    await fs.mkdir(path.dirname(defFilePath), { recursive: true });
-    await fs.writeFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
-
-    return defFilePath;
-  }
-
-  let defFileContent = await fs.readFile(defFilePath, 'utf-8');
-  // 判断是否已经导入
-  if (defFileContent.indexOf(typeName) === -1) {
-    // 追加
-    await fs.appendFile(defFilePath, `export { default as ${typeName} } from '${relativePath}/${typeName}';\n`);
-  }
-
-  return defFilePath;
 }
