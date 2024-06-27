@@ -1,6 +1,6 @@
 import path from 'path';
 import { NoApiLocalConfig } from '@/types';
-import { checkExists, writeToFile } from './write';
+import { writeToFile } from './write';
 import { exitWithError } from './tools';
 
 export const CONFIG_FILE_NAME = 'noapi.config.js';
@@ -15,17 +15,20 @@ export function definedNoApiConfig(config: NoApiLocalConfig) {
 }
 
 /**
+ * 获取配置文件路径
+ * @param basePath 
+ * @returns 
+ */
+export function getConfigPath(basePath = process.cwd()) {
+  return path.join(basePath, CONFIG_FILE_NAME);
+}
+
+/**
  * 创建配置文件
  * @param url 接口文档地址
  * @returns
  */
-export async function createConfig(url: string, basePath = process.cwd()) {
-  const configFilePath = path.join(basePath, CONFIG_FILE_NAME);
-
-  if (await checkExists(configFilePath)) {
-    exitWithError(`配置文件已存在，请删除后再尝试创建！`);
-  }
-
+export async function createConfigFile(url: string, configFilePath = getConfigPath()) {
   const fileHeader = `const { definedNoApiConfig } = require('@zmn/noapi');\n`;
 
   const defaultConfig = `{

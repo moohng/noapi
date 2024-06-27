@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-26 17:15:39
+ * @LastEditTime: 2024-06-27 15:52:47
  * @LastEditors: mohong@zmn.cn
  * @Description: NoApi 核心对象
  */
@@ -448,7 +448,7 @@ class NoApi {
         if (this.defKeyDone.has(subDefinitionKey)) {
           tsType = parseToTsType(property).replace('models.', '');
         } else {
-          await this.printDefinitionCode(subDefinitionKey, receiveHandler);
+          this.printDefinitionCode({ key: subDefinitionKey }, receiveHandler);
 
           // 泛型
           if (definitionKey.includes(`«${subDefinitionKey}»`)) {
@@ -461,16 +461,18 @@ class NoApi {
             }
           } else {
             tsType = formatObjName(subDefinitionKey);
-            // 导入外部类型
-            const importStr = `import ${tsType} from './${tsType}'`;
-            if (!codeStr.includes(importStr)) {
-              codeStr = `${importStr};\n${
-                codeStr.includes('import') ? '' : '\n'
-              }${codeStr}`;
-            }
           }
 
           tsType += property.items?.$ref ? '[]' : '';
+        }
+        
+        // 导入外部类型
+        const importType = tsType.replace(/\W/g, '');
+        const importStr = `import ${importType} from './${importType}'`;
+        if (!codeStr.includes(importStr) && definitionKey !== subDefinitionKey) {
+          codeStr = `${importStr};\n${
+            codeStr.includes('import') ? '' : '\n'
+          }${codeStr}`;
         }
       } else {
         tsType = parseToTsType(property);

@@ -4,7 +4,7 @@ import { exitWithError } from '../utils/tools.js';
 import * as readline from 'readline/promises';
 import path from 'path';
 import { appendToFile, checkExists, writeToFile, writeToIndexFile } from '../utils/write.js';
-import { createConfig, mergeConfig } from '../utils/config.js';
+import { createConfigFile, getConfigPath, mergeConfig } from '../utils/config.js';
 
 program
   .version('1.0.0')
@@ -123,7 +123,14 @@ program
       output: process.stdout,
     });
     const swUrl = await rl.question('请输入swagger文档地址(swUrl): ');
-    const configFile = await createConfig(swUrl);
+
+    const configFilePath = getConfigPath();
+    if (await checkExists(configFilePath)) {
+      exitWithError(`配置文件已存在，请删除后再尝试创建！`);
+    }
+
+    const configFile = await createConfigFile(swUrl, configFilePath);
+
     rl.close();
 
     console.log(`配置文件${configFile}已生成，可自定义配置.`);
