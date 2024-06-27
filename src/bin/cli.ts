@@ -11,7 +11,7 @@ program
   .description(
     '欢迎使用 NoAPI，使用 npx noapi api url1,url2... 立即体验！\n\
 如果生成的api方法或类型文件有问题，建议使用-p参数查看接口相关信息，然后使用def命令手动生成类型定义。\n\
-swUrl和outDir等相关参数建议写在配置文件noapi.config.js中。'
+swUrl、cookie等相关参数建议写在配置文件noapi.config.js中。'
   );
 
 // api命令

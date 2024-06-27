@@ -30,10 +30,8 @@ export async function createConfig(url: string, basePath = process.cwd()) {
 
   const defaultConfig = `{
   swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
-  outDir: './src/api',
-  definition: {
-    outDir: './src/model',
-  },
+  apiBase: './src/api',
+  defBase: './src/model',
 }`;
 
   const configInput = `${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`;
