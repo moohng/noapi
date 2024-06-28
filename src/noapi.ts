@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-27 15:52:47
+ * @LastEditTime: 2024-06-28 09:41:46
  * @LastEditors: mohong@zmn.cn
  * @Description: NoApi 核心对象
  */
@@ -217,7 +217,7 @@ class NoApi {
 
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
 
-    methodKeys.forEach((method) => {
+    methodKeys.forEach(async (method) => {
       if (onlyMethod && method !== onlyMethod) {
         return;
       }
@@ -308,7 +308,7 @@ class NoApi {
         url = url.replace(/\{(.*?)\}/g, (_, $1) => `\${params.${$1}\}`);
       }
 
-      const apiContext: ApiContext = {
+      let apiContext: ApiContext = {
         api,
         name: funcName,
         method,
@@ -319,20 +319,22 @@ class NoApi {
         comment: api.summary,
       };
 
-      // 生成api函数
-      let apiFuncStr = '';
-
       if (typeof customApi === 'function') {
-        apiFuncStr = customApi(apiContext);
+        const result = await customApi(apiContext);
+        if (typeof result === 'string') {
+          apiContext.sourceCode = result;
+        } else if (result.sourceCode) {
+          apiContext = result;
+        }
       } else {
-        apiFuncStr = printApi(apiContext);
+        apiContext.sourceCode = printApi(apiContext);
       }
 
       if (typeof transformApi === 'function') {
-        apiFuncStr = transformApi(apiFuncStr, apiContext);
+        apiContext = await transformApi(apiContext);
       }
 
-      codeStr += apiFuncStr;
+      codeStr += apiContext.sourceCode;
     });
 
     // 创建目录 TODO:默认输出目录待验证
@@ -345,6 +347,7 @@ class NoApi {
       sourceCode: await codeFormat(codeStr),
       fileName,
       fileDir,
+      funcName,
     });
 
     defTodo.forEach((key) => {

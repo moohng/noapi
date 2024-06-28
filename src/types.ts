@@ -71,11 +71,11 @@ export interface ApiOptions {
   /**
    * 自定义生成api方法
    */
-  customApi?: (apiContext: ApiContext) => string;
+  customApi?: (apiContext: ApiContext) => string | ApiContext | Promise<string | ApiContext>;
   /**
    * 自定义的一些其他代码转换
    */
-  transformApi?: (source: string, apiContext: ApiContext) => string;
+  transformApi?: (apiContext: ApiContext) => ApiContext | Promise<ApiContext>;
   /**
    * 类型定义配置
    */
@@ -118,6 +118,7 @@ export interface TypeFieldOption {
 
 export interface ApiContext {
   api: SWApiDefinition,
+  sourceCode?: string;
   /** 默认取URL最后一段 */
   name: string;
   url: string;
@@ -136,6 +137,7 @@ export interface GenerateApiResult {
   sourceCode: string;
   fileName: string;
   fileDir: string;
+  funcName?: string;
 }
 
 export interface GenerateDefinitionResult {
