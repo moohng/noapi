@@ -1,7 +1,7 @@
 /*
  * @Author: mohong@zmn.cn
  * @Date: 2024-03-20 18:18:22
- * @LastEditTime: 2024-06-28 09:41:46
+ * @LastEditTime: 2024-07-01 14:36:43
  * @LastEditors: mohong@zmn.cn
  * @Description: NoApi 核心对象
  */
@@ -216,8 +216,8 @@ class NoApi {
     let codeStr = '';
 
     const methodKeys = Object.keys(apiCollections) as unknown as SWApiMethod[];
-
-    methodKeys.forEach(async (method) => {
+    
+    for (const method of methodKeys) {
       if (onlyMethod && method !== onlyMethod) {
         return;
       }
@@ -321,10 +321,11 @@ class NoApi {
 
       if (typeof customApi === 'function') {
         const result = await customApi(apiContext);
+        console.log('自定义api', result);
         if (typeof result === 'string') {
           apiContext.sourceCode = result;
         } else if (result.sourceCode) {
-          apiContext = result;
+          apiContext = { ...apiContext, ...result };
         }
       } else {
         apiContext.sourceCode = printApi(apiContext);
@@ -335,7 +336,7 @@ class NoApi {
       }
 
       codeStr += apiContext.sourceCode;
-    });
+    }
 
     // 创建目录 TODO:默认输出目录待验证
     const fileDir = (dirName ? dirName + '/' : '') + `${fileName}.ts`;

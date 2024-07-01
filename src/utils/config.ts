@@ -1,3 +1,10 @@
+/*
+ * @Author: mohong@zmn.cn
+ * @Date: 2024-06-26 15:14:28
+ * @LastEditTime: 2024-07-01 15:02:04
+ * @LastEditors: mohong@zmn.cn
+ * @Description: 配置文件相关
+ */
 import path from 'path';
 import { NoApiLocalConfig } from '@/types';
 import { writeToFile } from './write';
@@ -29,15 +36,30 @@ export function getConfigPath(basePath = process.cwd()) {
  * @returns
  */
 export async function createConfigFile(url: string, configFilePath = getConfigPath()) {
-  const fileHeader = `const { definedNoApiConfig } = require('@zmn/noapi');\n`;
+  const fileHeader = `/**
+ * 语法提示请安装 @zmn/noapi 依赖包
+ * @type {import('@zmn/noapi/lib/types').NoApiLocalConfig}
+ */
+`;
 
   const defaultConfig = `{
   swUrl: '${url || 'https://test-api-crp-matter.xiujiadian.com/v2/api-docs?group=web'}',
+  swFile: './src/api/noapi-swagger-doc.json',
   apiBase: './src/api',
   defBase: './src/model',
+  // customApi: (apiContext) => {
+  //   // 自定义 api 函数
+  //   // interface ApiContext { api: SWApiDefinition, sourceCode?: string; name: string; url: string; method: string; inType?: string; outType?: string; comment?: string; pathParams?: TypeFieldOption[]; }
+
+  //   // do something...
+
+  //   // 返回一个字符串代码或一个新的 apiContext
+  //   // 注意：代码格式需要自己调整，该插件不会做任何转换
+  //   return \`custom api code...\`;
+  // },
 }`;
 
-  const configInput = `${fileHeader}\nmodule.exports = definedNoApiConfig(${defaultConfig});\n`;
+  const configInput = `${fileHeader}module.exports = ${defaultConfig};\n`;
 
   await writeToFile(configFilePath, configInput);
 
