@@ -171,7 +171,7 @@ class NoApi {
       throw new Error(`${url} 的 ${onlyMethod} 方法不存在！`);
     }
 
-    const { transformApi, customApi } = this.config;
+    const { beforeApi, transformApi, customApi } = this.config;
 
     let { funcName: defaultFuncName, fileName, dirName, pathStrParams } = parseUrl(url);
     funcName = funcName || defaultFuncName;
@@ -288,6 +288,10 @@ class NoApi {
         comment: api.summary,
       };
 
+      if (typeof beforeApi === 'function') {
+        apiContext = await beforeApi(apiContext);
+      }
+
       if (typeof customApi === 'function') {
         const result = await customApi(apiContext);
         console.log('自定义api', result);
@@ -295,6 +299,8 @@ class NoApi {
           apiContext.sourceCode = result;
         } else if (result.sourceCode) {
           apiContext = { ...apiContext, ...result };
+        } else {
+          apiContext.sourceCode = printApi(apiContext);
         }
       } else {
         apiContext.sourceCode = printApi(apiContext);
@@ -308,7 +314,6 @@ class NoApi {
     }
 
     if (!onlyDef) {
-      // 创建目录 TODO:默认输出目录待验证
       const fileDir = (dirName ? dirName + '/' : '') + `${fileName}.ts`;
 
       console.log('===== [api]', fileDir, '\n');
@@ -347,11 +352,6 @@ class NoApi {
     receiveHandler: (result: GenerateDefinitionResult) => void | Promise<void>
   ) {
     let definitionKey = key;
-    // const keepOuter = false;
-    // if (!keepOuter) {
-    //   definitionKey = definitionKey.match(/«(.+)»/)?.[1] || definitionKey;
-    // }
-
     // 忽略一些类型：List等
     ['List'].forEach((ignoreType) => {
       definitionKey = definitionKey.match(new RegExp(`${ignoreType}«(.+)»`))?.[1] || definitionKey;

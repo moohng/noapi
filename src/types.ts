@@ -77,8 +77,10 @@ export interface NoApiConfig {
   cookie?: string;
   /** swagger json 文档内容 */
   swagJson?: SWJson;
-  /** api文件头部信息，如import导入等 */
-  fileHeader?: string;
+  /**
+   * 自定义 apiContext 信息
+   */
+  beforeApi?: (apiContext: ApiContext) => ApiContext | Promise<ApiContext>;
   /**
    * 自定义生成api方法，此时还没有生成源码
    */
@@ -104,6 +106,8 @@ export interface NoApiLocalConfig extends NoApiConfig {
   defBase?: string;
   /** swagger 本地文件路径 */
   swagFile?: string;
+  /** api文件头部信息，如import导入等，第一次新建文件时生效 */
+  fileHeader?: string | (() => string | Promise<string>);
 }
 
 export interface ApiInfo {

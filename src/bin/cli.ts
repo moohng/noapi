@@ -63,8 +63,8 @@ program
     noapi.generateByUrls(urls, async ({ sourceType, sourceCode, fileDir, typeName }) => {
       if (sourceType === 'api') {
         const filePath = path.resolve(apiBase, fileDir);
-        if (!await checkExists(filePath)) {
-          sourceCode = fileHeader || `import * as models from '@/model';\nimport request from '@/utils/request';\n` + sourceCode;
+        if (fileHeader && !await checkExists(filePath)) {
+          sourceCode = (typeof fileHeader === 'function' ? await fileHeader() : fileHeader) + '\n' + sourceCode;
         }
         appendToFile(filePath, sourceCode);
       } else {
