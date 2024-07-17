@@ -1,4 +1,4 @@
-import { SWDefinitionProperty, TypeFieldOption } from '@/types';
+import { SWDefinitionProperty, TypeFieldOption } from '../types';
 import { parseToTsType } from './parse';
 
 /**

@@ -1,5 +1,5 @@
 import path from 'path';
-import { NoApiLocalConfig } from '@/types';
+import { NoApiLocalConfig } from '../types';
 import { writeToFile } from './write';
 
 export const CONFIG_FILE_NAME = 'noapi.config.js';

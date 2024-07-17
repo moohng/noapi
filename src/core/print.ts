@@ -1,4 +1,4 @@
-import { ApiContext } from '@/types';
+import { ApiContext } from '../types';
 import { transformTypeFieldCode } from './transform';
 
 export function print(opt: any, printHandler: any) {

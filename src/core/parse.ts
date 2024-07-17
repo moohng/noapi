@@ -1,4 +1,4 @@
-import { SWDefinitionProperty } from '@/types';
+import { SWDefinitionProperty } from '../types';
 import { formatObjName, isBaseType } from '../utils/tools';
 
 /**
