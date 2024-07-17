@@ -36,20 +36,6 @@ export function defPrefix(type: string) {
 }
 
 /**
- * 报错并退出
- * @param message
- */
-export function exitWithError(...messages: string[]) {
-  console.error('Error:', ...messages);
-  // 如果是nodejs环境，退出程序
-  if (typeof process !== 'undefined' && process.exit) {
-    process.exit(1);
-  } else {
-    throw new Error(messages.join('\n'));
-  }
-}
-
-/**
  * 格式化代码
  * @param code 
  * @returns 

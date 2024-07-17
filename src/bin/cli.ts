@@ -1,15 +1,28 @@
-import { program } from 'commander';
-import { createNoApi } from '../noapi.js';
-import { exitWithError } from '../utils/tools.js';
-import * as readline from 'readline/promises';
 import path from 'path';
-import { appendToFile, checkExists, writeToFile, writeToIndexFile } from '../utils/write.js';
-import { createConfigFile, getConfigPath, mergeConfig } from '../utils/config.js';
+import { program } from 'commander';
+import * as readline from 'readline/promises';
+import { createNoApi } from '../noapi';
+import { appendToFile, checkExists, writeToFile, writeToIndexFile } from '../utils/write';
+import { createConfigFile, getConfigPath, mergeConfig } from '../utils/config';
+
+/**
+ * 报错并退出
+ * @param message
+ */
+function exitWithError(...messages: string[]) {
+  console.error('Error:', ...messages);
+  // 如果是nodejs环境，退出程序
+  if (typeof process !== 'undefined' && process.exit) {
+    process.exit(1);
+  } else {
+    throw new Error(messages.join('\n'));
+  }
+}
 
 program
   .version('1.0.0')
   .description(
-    '欢迎使用 NoAPI，使用 npx noapi api url1,url2... 立即体验！\n\
+    '欢迎使用 NoAPI，使用 npx @noapi/cli api url1,url2... 立即体验！\n\
 如果生成的api方法或类型文件有问题，建议使用-p参数查看接口相关信息，然后使用def命令手动生成类型定义。\n\
 swUrl、cookie等相关参数建议写在配置文件noapi.config.js中。'
   );
@@ -18,7 +31,7 @@ swUrl、cookie等相关参数建议写在配置文件noapi.config.js中。'
 program
   .command('api [urls]', { isDefault: true }) // <urls...> 可以解析成一个数组
   .description('生成api函数，url路径不能以/开头')
-  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
+  .option('-u, --swag-url <swagUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .option('-l, --list [showList]', '查询api接口')
   .action(async (urls, options) => {
@@ -79,7 +92,7 @@ program
 program
   .command('def <defKeys>')
   .description('生成类型定义，defKeys可通过api命令加-l参数获取')
-  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
+  .option('-u, --swag-url <swagUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .action(async (defKeys: string, options) => {
     console.log('开始运行...');
@@ -143,7 +156,7 @@ program
 program
   .command('update')
   .description('更新swagger文档')
-  .option('-u, --sw-url <swUrl>', '指定swagger文档地址')
+  .option('-u, --swag-url <swagUrl>', '指定swagger文档地址')
   .option('-c, --cookie <cookie>', 'url的授权cookie')
   .action(async (options) => {
     console.log('开始运行...');

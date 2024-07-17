@@ -6,7 +6,7 @@
   "types": "lib/index.d.ts",
   "module": "lib/index.js",
   "bin": {
-    "noapi": "lib/bin/cli.js"
+    "noapi-cli": "lib/bin/cli.js"
   },
   "files": [
     "lib",
