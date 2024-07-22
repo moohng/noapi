@@ -100,14 +100,16 @@ export interface NoApiConfig {
 }
 
 export interface NoApiLocalConfig extends NoApiConfig {
-  /** api文件输出根目录 */
+  /** api文件输出根目录，默认在./src/api目录下 */
   apiBase?: string;
-  /** 类型定义输出根目录 */
+  /** 类型定义输出根目录，默认在apiBase中当前api目录下创建的model目录 */
   defBase?: string;
-  /** swagger 本地文件路径 */
+  /** swagger 本地文件路径，默认在apiBase的根目录下创建 noapi-swagger-doc.json */
   swagFile?: string;
   /** api文件头部信息，如import导入等，第一次新建文件时生效 */
   fileHeader?: string | (() => string | Promise<string>);
+  /** 是否导出所有类型定义到index.ts文件中，默认true */
+  exportFromIndex?: boolean;
 }
 
 export interface ApiInfo {
