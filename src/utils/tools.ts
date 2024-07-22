@@ -29,9 +29,9 @@ export function isBaseType(type: string) {
  * 对类型添加命名空间前缀，比如：AMISList<WorkItem> ===> models.AMISList<models.WorkItem>
  * @param type 
  */
-export function defPrefix(type: string) {
+export function defPrefix(type: string, prefix = 'models') {
   return isBaseType(type) ? type : type.replace(/[^<>]+/g, (match) => {
-    return isBaseType(match) ? match : `models.${match}`;
+    return isBaseType(match) ? match : `${prefix}.${match}`;
   });
 }
 

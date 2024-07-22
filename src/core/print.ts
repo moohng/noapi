@@ -11,7 +11,7 @@ export function print(opt: any, printHandler: any) {
  * @param apiContext
  * @returns
  */
-export function printApi(apiContext: ApiContext) {
+export function printDefaultApi(apiContext: ApiContext) {
   const { inType, outType, comment, name, url, method, pathParams } = apiContext;
   let paramStr = inType ? `data: ${inType}` : '';
   let urlStr = `'${url}'`;
@@ -22,7 +22,7 @@ export function printApi(apiContext: ApiContext) {
     const paramUrl = url.replace(/\{(.*?)\}/g, (_, $1) => `\${params.${$1}\}`);
     urlStr = `\`${paramUrl}\``;
   }
-  const resStr = outType?.includes('List<') ? `${outType.match(/(models\.)?List<(.*)>/)![2]}[]` : outType;
+  const resStr = outType?.includes('List<') ? `${outType.match(/List<(.*)>/)![1]}[]` : outType;
   let apiFuncStr = `
 export function ${name}(${paramStr}) {
   return request<${resStr}>({ url: ${urlStr},${inType ? ' data,' : ''} method: '${method.toUpperCase()}' });
@@ -43,8 +43,4 @@ export function ${name}(${paramStr}) {
  */` + apiFuncStr;
   }
   return apiFuncStr;
-}
-
-export function printDef() {
-  console.log('printDef');
 }

@@ -1,7 +1,7 @@
-import { codeFormat, defPrefix, formatObjName, upperFirst } from './utils/tools';
+import { codeFormat, formatObjName, upperFirst } from './utils/tools';
 import { transformTypeInterfaceCode } from './core/transform';
 import { parseToTsType, parseUrl } from './core/parse';
-import { printApi } from './core/print';
+import { printDefaultApi } from './core/print';
 import {
   ApiContext,
   ApiInfo,
@@ -284,8 +284,8 @@ class NoApi {
         method,
         url,
         pathParams,
-        inType: inTypeName ? defPrefix(inTypeName) : undefined,
-        outType: defPrefix(outTypeName),
+        inType: inTypeName,
+        outType: outTypeName,
         comment: api.summary,
       };
 
@@ -301,10 +301,10 @@ class NoApi {
         } else if (result.sourceCode) {
           apiContext = { ...apiContext, ...result };
         } else {
-          apiContext.sourceCode = printApi(apiContext);
+          apiContext.sourceCode = printDefaultApi(apiContext);
         }
       } else {
-        apiContext.sourceCode = printApi(apiContext);
+        apiContext.sourceCode = printDefaultApi(apiContext);
       }
 
       if (typeof transformApi === 'function') {
@@ -421,7 +421,7 @@ class NoApi {
         // FIXME: 可能造成死循环
         console.log('递归生成', this.defKeyDone, subDefinitionKey, this.defKeyDone.has(subDefinitionKey));
         if (this.defKeyDone.has(subDefinitionKey)) {
-          tsType = parseToTsType(property).replace('models.', '');
+          tsType = parseToTsType(property);
         } else {
           await this.printDefinitionCode({ key: subDefinitionKey }, receiveHandler);
 
