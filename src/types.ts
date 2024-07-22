@@ -99,6 +99,9 @@ export interface NoApiConfig {
   matchTypes?: (string | RegExp)[];
 }
 
+/**
+ * 为保证使用noapi的配置一致性，需要遵循此配置规范
+ */
 export interface NoApiLocalConfig extends NoApiConfig {
   /** api文件输出根目录，默认在./src/api目录下 */
   apiBase?: string;
