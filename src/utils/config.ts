@@ -30,7 +30,7 @@ export function getConfigPath(basePath = process.cwd()) {
 export async function createConfigFile(url: string, configFilePath = getConfigPath()) {
   const fileHeader = `/**
  * 语法提示请安装 @noapi/core 依赖包
- * @type {import('@noapi/core/lib/types').NoApiLocalConfig}
+ * @type {import('@noapi/core/types').NoApiLocalConfig}
  */
 `;
 
