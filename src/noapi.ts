@@ -161,7 +161,7 @@ class NoApi {
    */
   public async printApiCode(
     { url, method: onlyMethod, funcName, onlyDef }: PrintApiCodeOption,
-    receiveHandler: (result: GenerateApiResult & Partial<GenerateDefinitionResult>) => void | Promise<void>
+    receiveHandler: (result: GenerateApiResult) => void | Promise<void>
   ) {
     const apiCollections = this.swagJson!.paths![url];
     if (!apiCollections) {
@@ -173,10 +173,10 @@ class NoApi {
 
     const { beforeApi, transformApi, customApi } = this.config;
 
-    let { funcName: defaultFuncName, fileName, dirName, pathStrParams } = parseUrl(url);
+    let { funcName: defaultFuncName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(url);
     funcName = funcName || defaultFuncName;
 
-    console.log(`===== [url] ${url} [方法名] ${funcName} [文件名] ${fileName} [目录名] ${dirName}`);
+    console.log(`===== [url] ${url} [方法名] ${funcName} [文件名] ${fileNameWithoutExt} [目录名] ${dirName}`);
 
     const defTodo = new Set<string>();
     const pathParams: TypeFieldOption[] = pathStrParams.map((item) => ({
@@ -246,15 +246,16 @@ class NoApi {
         });
         // 生成query类型
         if (queryParams.length > 0) {
-          inTypeName = `${upperFirst(fileName)}${upperFirst(funcName)}Query`;
+          inTypeName = `${upperFirst(fileNameWithoutExt)}${upperFirst(funcName)}Query`;
           const interfaceCode = transformTypeInterfaceCode(queryParams, inTypeName);
           const queryFileName = `${inTypeName}.ts`;
-          const fileDir = 'query/' + queryFileName;
+          const fileDir = (dirName ? dirName + '/' : '') + 'query';
           await receiveHandler({
             sourceType: 'definition',
             sourceCode: interfaceCode,
             fileName: queryFileName,
             fileDir,
+            filePath: `${fileDir}/${queryFileName}`,
             typeName: inTypeName,
           });
         }
@@ -314,26 +315,29 @@ class NoApi {
     }
 
     if (!onlyDef) {
-      const fileDir = (dirName ? dirName + '/' : '') + `${fileName}.ts`;
+      const fileName = `${fileNameWithoutExt}.ts`;
+      const filePath = (dirName ? dirName + '/' : '') + fileName;
 
-      console.log('===== [api]', fileDir, '\n');
+      console.log('===== [api]', filePath, '\n');
 
       await receiveHandler({
         sourceType: 'api',
         sourceCode: await codeFormat(codeStr),
         fileName,
-        fileDir,
+        fileDir: dirName,
+        filePath,
         funcName,
       });
     }
 
     try {
+      const fileDir = (dirName ? dirName + '/' : '') + 'model';
       for (let key of defTodo) {
         // TODO: 是否去掉最外层的类型
         key = key.match(/«(.+)»/)?.[1] || key;
         await this.printDefinitionCode(
           { key },
-          async (result) => await receiveHandler({ sourceType: 'definition', ...result })
+          async (result) => await receiveHandler({ sourceType: 'definition', ...result, fileDir, filePath: `${fileDir}/${result.fileName}` })
         );
       }
     } catch (error) {
@@ -473,15 +477,14 @@ class NoApi {
       codeStr = codeStr.replace(`interface ${objName}`, `interface ${objName}<${genericTypes.join(', ')}>`);
     }
 
-    const fileDir = `${objName}.ts`;
+    const fileName = `${objName}.ts`;
 
-    console.log('===== [model]', fileDir);
+    console.log('===== [model]', fileName);
 
     await receiveHandler({
       sourceCode: await codeFormat(codeStr),
       typeName: objName,
-      fileName: objName,
-      fileDir,
+      fileName,
     });
   }
 }

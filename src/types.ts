@@ -152,16 +152,24 @@ export interface ApiContext {
 export interface GenerateApiResult {
   sourceType: 'api' | 'definition';
   sourceCode: string;
-  fileName: string;
-  fileDir: string;
+  /** 函数名称 */
   funcName?: string;
+  /** 类型名称 Abc */
+  typeName?: string;
+  /** abc.ts */
+  fileName: string;
+  /** d:\zmn\noapi\src\api */
+  fileDir: string;
+  /** d:\zmn\noapi\src\api\abc.ts */
+  filePath: string;
 }
 
 export interface GenerateDefinitionResult {
   sourceCode: string;
+  /** 类型名称 Abc */
   typeName: string;
+  /** abc.ts */
   fileName: string;
-  fileDir: string;
 }
 
 export interface PrintApiCodeOption {
