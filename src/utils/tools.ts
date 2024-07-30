@@ -10,7 +10,7 @@
  */
 export function formatObjName(objName: string) {
   // 去掉包名 com.xxx.common.dto2.  、非法字符
-  let name = objName.replace(/\w+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>')
+  let name = objName.replace(/[\w-]+(\.|\/)/g, '').replace(/«/g, '<').replace(/»/g, '>')
   name = name.replace(/[^<>]+/g, (match) => {
     return match.replace(/[^a-zA-Z0-9]/g, '') || match;
   });
