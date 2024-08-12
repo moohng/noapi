@@ -29,9 +29,7 @@ class NoApi {
     this.config = config;
   }
 
-  get swagJson() {
-    return this.config.swagJson;
-  }
+  private swagJson?: SWJson;
 
   /**
    * 根据URL生成api函数
@@ -87,11 +85,11 @@ class NoApi {
    * 列出Api接口信息
    */
   async listApi(urls?: string[]) {
-    if (!this.config.swagJson?.paths) {
+    if (!this.swagJson?.paths) {
       await this.fetchDataSource();
     }
 
-    const paths = this.config.swagJson?.paths;
+    const paths = this.swagJson?.paths;
     if (!paths) {
       throw new Error('接口文档解析失败，请检查 swUrl 是否正确！');
     }
@@ -127,17 +125,31 @@ class NoApi {
    * 获取数据源
    */
   async fetchDataSource(url?: string) {
-    const { swagUrl, cookie } = this.config;
+    const { swagUrl, swagSource, cookie } = this.config;
+
+    if (typeof swagSource === 'object' && (swagSource as SWJson).swagger) {
+      this.swagJson = swagSource as SWJson;
+      return this.swagJson;
+    }
+
+    if (typeof swagSource === 'function') {
+      try {
+        this.swagJson = await swagSource();
+        return this.swagJson;
+      } catch (error) {
+        console.error(error, '自定义数据源获取失败！');
+      }
+    }
 
     console.log('开始获取api数据源...');
 
-    const swaggerUrl = url || swagUrl;
+    const swaggerUrl = url || (swagSource as string) || swagUrl;
     if (!swaggerUrl) {
       throw new Error('请提供swagger文档地址！');
     }
 
     try {
-      const res = await fetch(swaggerUrl!, {
+      const res = await fetch(swaggerUrl, {
         headers: { 'Content-Type': 'application/json', Cookie: cookie || '' },
       });
       const json = (await res.json()) as SWJson;
@@ -145,8 +157,7 @@ class NoApi {
       if (!json.swagger) {
         throw new Error('请提供有效的swagger文档地址！');
       } else {
-        this.config.swagJson = json;
-        this.config.swagUrl = swaggerUrl;
+        this.swagJson = json;
       }
     } catch (error) {
       throw new Error('数据源获取失败，请检查 swUrl 是否正确！');
@@ -361,7 +372,7 @@ class NoApi {
       definitionKey = definitionKey.match(new RegExp(`${ignoreType}«(.+)»`))?.[1] || definitionKey;
     });
 
-    const definitionCollection = this.config.swagJson!.definitions![definitionKey];
+    const definitionCollection = this.swagJson!.definitions![definitionKey];
     if (!definitionCollection) {
       throw new Error(`${definitionKey} 不存在！`);
     }
@@ -495,8 +506,8 @@ class NoApi {
  * @returns
  */
 export function createNoApi(config: NoApiConfig) {
-  if (!config?.swagUrl && !config?.swagJson) {
-    throw new Error('swUrl和swJson至少配置一个！');
+  if (!config?.swagUrl && !config?.swagSource) {
+    throw new Error('请配置 swagSource！');
   }
   return new NoApi(config);
 }
