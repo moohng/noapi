@@ -78,15 +78,15 @@ export function loadConfig(configRootPath = process.cwd(), loader = (filePath: s
 
 /**
  * 合并配置项
- * @param options 
+ * @param option 
  * @returns 
  */
-export function mergeConfig(options: NoApiLocalConfig) {
+export function mergeConfig(option: NoApiLocalConfig) {
   // 过滤掉空值
-  options = Object.fromEntries(Object.entries(options).filter((item) => item[1] !== undefined));
+  option = Object.fromEntries(Object.entries(option).filter((item) => item[1] !== undefined)) as NoApiLocalConfig;
   const config = {
     ...(loadConfig() || {}),
-    ...options,
+    ...option,
   };
 
   return config as NoApiLocalConfig;

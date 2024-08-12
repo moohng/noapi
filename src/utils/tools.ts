@@ -1,6 +1,3 @@
-// import * as prettier from 'prettier';
-// import standard from 'standard';
-
 /**
  * 去掉后端对象名中的非法字符
  * 比如：com.xxx.common.dto2.ResponseDTO«List«ActivityListVO对象»»     ======>     ResponseDTO<List<ActivityListVO>>
@@ -33,23 +30,6 @@ export function defPrefix(type: string, prefix = 'models') {
   return isBaseType(type) ? type : type.replace(/[^<>]+/g, (match) => {
     return isBaseType(match) ? match : `${prefix}.${match}`;
   });
-}
-
-/**
- * 格式化代码
- * @param code 
- * @returns 
- */
-export async function codeFormat(code: string) {
-  // const formatted = await standard.format(code, {
-  //   parser: 'babel-ts',
-  //   singleQuote: true,
-  //   trailingComma: 'es5',
-  //   printWidth: 150,
-  //   endOfLine: 'auto',
-  // });
-  // return formatted;
-  return code;
 }
 
 /**

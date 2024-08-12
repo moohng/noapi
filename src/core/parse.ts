@@ -9,31 +9,26 @@ import { formatObjName, isBaseType } from '../utils/tools';
  */
 export function parseUrl(url: string) {
   // 根据URL路径确定目录结构
-  const urlSplitArr = url.replace(/-(\w)/g, (_, p1) => p1.toUpperCase()).replace(/^\//, '').split('/');
+  const urlSplitArr = url.replace(/[-_](\w)/g, (_, p1) => p1.toUpperCase()).replace(/^\//, '').split('/');
 
   // 路径参数
   const pathStrParams: string[] = [];
 
-  const getFuncName = () => {
-    let name = urlSplitArr.pop()!;
-    if (name.includes('{') || name.includes(':')) {
-      // 获取path参数
-      const matched = name.match(/\{(.+)\}/) || name.match(/:(.+)/);
-      if (matched) {
-        pathStrParams.push(matched[1]);
-      }
-
-      name = getFuncName();
+  const validUrlSplitArr = urlSplitArr.filter((item) => {
+    // 获取path参数
+    const matched = item.match(/\{(.+)\}/) || item.match(/:(.+)/);
+    if (matched) {
+      pathStrParams.push(matched[1]);
     }
-    return name;
-  };
+    return !matched;
+  });
 
   // api函数名
-  const funcName = getFuncName();
+  const funcName = validUrlSplitArr.pop() || 'index';
   // 文件名
-  const fileName = urlSplitArr.pop() || 'common';
+  const fileName = validUrlSplitArr.pop() || 'common';
   // 目录名
-  const dirName = urlSplitArr.join('/');
+  const dirName = validUrlSplitArr.join('/');
 
   return {
     funcName,
@@ -73,6 +68,9 @@ export function parseToTsType(
     integer: 'number',
     int: 'number',
     long: 'number',
+    double: 'number',
+    float: 'number',
+    number: 'number',
     boolean: 'boolean',
     object: 'object',
   };

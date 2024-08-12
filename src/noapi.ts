@@ -1,4 +1,4 @@
-import { codeFormat, formatObjName, upperFirst } from './utils/tools';
+import { formatObjName, upperFirst } from './utils/tools';
 import { transformTypeInterfaceCode } from './core/transform';
 import { parseToTsType, parseUrl } from './core/parse';
 import { printDefaultApi } from './core/print';
@@ -333,7 +333,7 @@ class NoApi {
 
       await receiveHandler({
         sourceType: 'api',
-        sourceCode: await codeFormat(codeStr),
+        sourceCode: codeStr,
         fileName,
         fileDir: dirName,
         filePath,
@@ -493,7 +493,7 @@ class NoApi {
     console.log('===== [model]', fileName);
 
     await receiveHandler({
-      sourceCode: await codeFormat(codeStr),
+      sourceCode: codeStr,
       typeName: objName,
       fileName,
     });
