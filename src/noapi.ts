@@ -31,6 +31,10 @@ class NoApi {
 
   private swagJson?: SWJson;
 
+  getSwagJson() {
+    return this.swagJson;
+  }
+
   /**
    * 根据URL生成api函数
    * @param urls
