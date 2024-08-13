@@ -1,6 +1,6 @@
 {
   "name": "@noapi/core",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "自动生成前端api代码和ts类型定义",
   "main": "lib/index.js",
   "module": "lib/index.js",

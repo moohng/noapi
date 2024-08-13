@@ -49,16 +49,12 @@ class NoApi {
 
     console.log('开始生成api函数...');
 
-    try {
-      if (Array.isArray(urls)) {
-        for (const url of urls) {
-          await this.printApiCode(typeof url === 'string' ? { url } : url, receiveHandler);
-        }
-      } else {
-        this.printApiCode(typeof urls === 'string' ? { url: urls } : urls, receiveHandler);
+    if (Array.isArray(urls)) {
+      for (const url of urls) {
+        await this.printApiCode(typeof url === 'string' ? { url } : url, receiveHandler);
       }
-    } catch (error) {
-      console.error(error);
+    } else {
+      await this.printApiCode(typeof urls === 'string' ? { url: urls } : urls, receiveHandler);
     }
   }
 
@@ -81,7 +77,7 @@ class NoApi {
         await this.printDefinitionCode(typeof def === 'string' ? { key: def } : def, receiveHandler);
       }
     } else {
-      this.printDefinitionCode(defs, receiveHandler);
+      await this.printDefinitionCode(defs, receiveHandler);
     }
   }
 
@@ -142,6 +138,7 @@ class NoApi {
         return this.swagJson;
       } catch (error) {
         console.error(error, '自定义数据源获取失败！');
+        throw new Error('自定义数据源获取失败！');
       }
     }
 
@@ -345,18 +342,14 @@ class NoApi {
       });
     }
 
-    try {
-      const fileDir = (dirName ? dirName + '/' : '') + 'model';
-      for (let key of defTodo) {
-        // TODO: 是否去掉最外层的类型
-        key = key.match(/«(.+)»/)?.[1] || key;
-        await this.printDefinitionCode(
-          { key },
-          async (result) => await receiveHandler({ sourceType: 'definition', ...result, fileDir, filePath: `${fileDir}/${result.fileName}` })
-        );
-      }
-    } catch (error) {
-      // 忽略错误
+    const fileDir = (dirName ? dirName + '/' : '') + 'model';
+    for (let key of defTodo) {
+      // TODO: 是否去掉最外层的类型
+      key = key.match(/«(.+)»/)?.[1] || key;
+      await this.printDefinitionCode(
+        { key },
+        async (result) => await receiveHandler({ sourceType: 'definition', ...result, fileDir, filePath: `${fileDir}/${result.fileName}` })
+      );
     }
   }
 
