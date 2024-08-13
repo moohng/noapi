@@ -35,11 +35,10 @@ export async function createConfigFile(url: string, configFilePath = getConfigPa
 `;
 
   const defaultConfig = `{
-  swagUrl: '${url}',
-  // cookie: '如果需要登录，请设置cookie',
-  // swagFile: './src/api/noapi-swagger-doc.json', // 默认在 apiBase 根目录下创建 noapi-swagger-doc.json 文件
+  swagSource: '${url}', // 推荐使用异步函数手动获取接口文档，如：() => axios.get('${url}').then(res => res.data),
   apiBase: './src/api',
   // defBase: './src/model', // 默认在 apiBase 目录下（取决于当前api目录层级）创建 model 目录
+  // swagFile: './src/api/noapi-swagger-doc.json', // 默认在 apiBase 根目录下创建 noapi-swagger-doc.json 文件
   // fileHeader: 'import request from \\'@/utils/request\\';', // 自定义api文件头部代码，新建文件时会自动添加到文件顶部
   // exportFromIndex: true, // 是否从 index.ts 导出类型定义文件，默认 true
   // customApi: (apiContext) => {

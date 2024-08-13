@@ -77,7 +77,11 @@ export interface NoApiConfig {
    * @deprecated
   */
   swagUrl?: string;
-  /** 如果接口文档需要登录，则需要设置cookie */
+  /**
+   * 如果接口文档需要登录，则需要设置cookie
+   * 已废弃，请使用 swagSource 回调函数
+   * @deprecated
+   */
   cookie?: string;
   /** swagger 来源，可以是url或json对象 或 异步函数 */
   swagSource: string | SWJson | (() => SWJson | Promise<SWJson>);
