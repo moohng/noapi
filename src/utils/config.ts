@@ -35,7 +35,7 @@ export async function createConfigFile(url: string, configFilePath = getConfigPa
 `;
 
   const defaultConfig = `{
-  swagSource: '${url}', // 推荐使用异步函数手动获取接口文档，如：() => axios.get('${url}').then(res => res.data),
+  swagSource: () => fetch('${url}').then(res => res.json()),
   apiBase: './src/api',
   // defBase: './src/model', // 默认在 apiBase 目录下（取决于当前api目录层级）创建 model 目录
   // swagFile: './src/api/noapi-swagger-doc.json', // 默认在 apiBase 根目录下创建 noapi-swagger-doc.json 文件
@@ -53,6 +53,7 @@ export async function createConfigFile(url: string, configFilePath = getConfigPa
   // },
   // ignoreTypes: ['string', /Response/], // 忽略类型，不生成对应的类型定义
   // matchTypes: ['string', /^xxx/], // 匹配类型，只生成对应的类型定义
+  // typeMapping: { date: 'string' }, // 类型映射
 }`;
 
   const configInput = `${fileHeader}module.exports = ${defaultConfig};\n`;
