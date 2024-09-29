@@ -71,19 +71,7 @@ export interface SWJson {
 
 // ============ NoApi 配置 ============
 export interface NoApiConfig {
-  /**
-   * swagger json 文档地址
-   * 已废弃，请使用 swagSource
-   * @deprecated
-  */
-  swagUrl?: string;
-  /**
-   * 如果接口文档需要登录，则需要设置cookie
-   * 已废弃，请使用 swagSource 回调函数
-   * @deprecated
-   */
-  cookie?: string;
-  /** swagger 来源，可以是url或json对象 或 异步函数 */
+  /** swagger 数据源 */
   swagSource: string | SWJson | (() => SWJson | Promise<SWJson>);
   /**
    * 自定义 apiContext 信息

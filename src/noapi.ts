@@ -91,7 +91,7 @@ class NoApi {
 
     const paths = this.swagJson?.paths;
     if (!paths) {
-      throw new Error('接口文档解析失败，请检查 swUrl 是否正确！');
+      throw new Error('接口文档解析失败，请检查 Swagger 数据源！');
     }
 
     urls = urls || Object.keys(paths);
@@ -124,8 +124,8 @@ class NoApi {
   /**
    * 获取数据源
    */
-  async fetchDataSource(url?: string) {
-    const { swagUrl, swagSource, cookie } = this.config;
+  async fetchDataSource() {
+    const { swagSource } = this.config;
 
     if (typeof swagSource === 'object' && (swagSource as SWJson).swagger) {
       this.swagJson = swagSource as SWJson;
@@ -137,34 +137,12 @@ class NoApi {
         this.swagJson = await swagSource();
         return this.swagJson;
       } catch (error) {
-        console.error(error, '自定义数据源获取失败！');
-        throw new Error('自定义数据源获取失败！');
+        console.error(error, 'Swagger 数据源获取失败！');
+        throw new Error('Swagger 数据源获取失败！请检查 swagSource 配置！');
       }
+    } else {
+      throw new Error('swagSource 配置不正确！');
     }
-
-    console.log('开始获取api数据源...');
-
-    const swaggerUrl = url || (swagSource as string) || swagUrl;
-    if (!swaggerUrl) {
-      throw new Error('请提供swagger文档地址！');
-    }
-
-    try {
-      const res = await fetch(swaggerUrl, {
-        headers: { 'Content-Type': 'application/json', Cookie: cookie || '' },
-      });
-      const json = (await res.json()) as SWJson;
-      console.log('获取api数据源成功');
-      if (!json.swagger) {
-        throw new Error('请提供有效的swagger文档地址！');
-      } else {
-        this.swagJson = json;
-      }
-    } catch (error) {
-      throw new Error('数据源获取失败，请检查 swUrl 是否正确！');
-    }
-
-    return this.swagJson;
   }
 
   /**
@@ -503,7 +481,7 @@ class NoApi {
  * @returns
  */
 export function createNoApi(config: NoApiConfig) {
-  if (!config?.swagUrl && !config?.swagSource) {
+  if (!config?.swagSource) {
     throw new Error('请配置 swagSource！');
   }
   return new NoApi(config);
