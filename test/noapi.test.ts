@@ -1,6 +1,6 @@
 import { createNoApi } from '../src/noapi';
 
-test('通过自定义来源函数获取swagger文档', async () => {
+test('通过来源函数获取swagger文档', async () => {
   const noapi = createNoApi({
     swagSource: () => new Promise((resolve) => {
       // 模拟异步获取数据

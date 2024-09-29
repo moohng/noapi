@@ -93,6 +93,10 @@ export interface NoApiConfig {
    * 只生成匹配的类型，比如只生成xxx开头的类型定义等
    */
   matchTypes?: (string | RegExp)[];
+  /**
+   * 自定义类型映射，将文档中的类型映射到ts类型，比如将String映射到string，将Integer映射到number等
+   */
+  typeMapping?: Record<string, string>;
 }
 
 /**

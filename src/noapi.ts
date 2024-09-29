@@ -161,7 +161,7 @@ class NoApi {
       throw new Error(`${url} 的 ${onlyMethod} 方法不存在！`);
     }
 
-    const { beforeApi, transformApi, customApi } = this.config;
+    const { beforeApi, transformApi, customApi, typeMapping } = this.config;
 
     let { funcName: defaultFuncName, fileName: fileNameWithoutExt, dirName, pathStrParams } = parseUrl(url);
     funcName = funcName || defaultFuncName;
@@ -254,7 +254,7 @@ class NoApi {
       // 出参
       let outTypeName = 'any';
       if (api.responses?.[200]?.schema) {
-        outTypeName = parseToTsType(api.responses[200].schema);
+        outTypeName = parseToTsType(api.responses[200].schema, typeMapping);
         outTypeName = outTypeName.match(/<(.+)>/)?.[1] || outTypeName;
         const { $ref, items } = api.responses[200].schema;
         const resRef = $ref || items?.$ref;
@@ -367,7 +367,7 @@ class NoApi {
       return;
     }
 
-    const { ignoreTypes, matchTypes } = this.config;
+    const { ignoreTypes, matchTypes, typeMapping } = this.config;
     // 过滤一些不合法类型
     if (
       ignoreTypes?.some((item) => (item instanceof RegExp ? item.test(definitionKey) : item === objName)) ||
@@ -407,7 +407,7 @@ class NoApi {
         // FIXME: 可能造成死循环
         console.log('递归生成', this.defKeyDone, subDefinitionKey, this.defKeyDone.has(subDefinitionKey));
         if (this.defKeyDone.has(subDefinitionKey)) {
-          tsType = parseToTsType(property);
+          tsType = parseToTsType(property, typeMapping);
         } else {
           await this.printDefinitionCode({ key: subDefinitionKey }, receiveHandler);
 
@@ -436,7 +436,7 @@ class NoApi {
           }
         }
       } else {
-        tsType = parseToTsType(property);
+        tsType = parseToTsType(property, typeMapping);
       }
 
       const isRequired = required?.includes(propKey);

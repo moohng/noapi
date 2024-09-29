@@ -41,22 +41,24 @@ export function parseUrl(url: string) {
 /**
  * 解析属性类型
  * @param {SWDefinitionProperty} property
+ * @param {Record<string, string>} typeMapping 类型映射表 { string: 'string', integer: 'number', ... }
  * @returns
  */
 export function parseToTsType(
-  property?: string | SWDefinitionProperty
+  property?: string | SWDefinitionProperty,
+  typeMapping?: Record<string, string>
 ): string {
   if (typeof property !== 'string') {
     // 数组类型
     if (property?.type === 'array') {
-      const subType = property.items ? parseToTsType(property.items) : 'any';
+      const subType = property.items ? parseToTsType(property.items, typeMapping) : 'any';
       return `${subType}[]`;
     }
 
     // 引用类型
     if (property?.$ref) {
       const name = formatObjName(property.$ref);
-      const parseType = parseToTsType(name);
+      const parseType = parseToTsType(name, typeMapping);
       return isBaseType(parseType) && parseType !== 'any' ? parseType : name;
     }
 
@@ -73,6 +75,7 @@ export function parseToTsType(
     number: 'number',
     boolean: 'boolean',
     object: 'object',
+    ...typeMapping,
   };
 
   return map[property as keyof typeof map] || 'any';

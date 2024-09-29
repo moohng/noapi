@@ -38,9 +38,12 @@ test('parseToTsType：解析到ts类型', () => {
   expect(parseToTsType('number')).toBe('number');
   expect(parseToTsType('boolean')).toBe('boolean');
   expect(parseToTsType('object')).toBe('object');
-  expect(parseToTsType('date')).toBe('any');
+  expect(parseToTsType('date', { date: 'Date'})).toBe('Date');
+  expect(parseToTsType('date', { date: 'string'})).toBe('string');
+  expect(parseToTsType('date', { Integer: 'number'})).toBe('any');
 
   expect(parseToTsType({ type: 'string' })).toBe('string');
+  expect(parseToTsType({ type: 'Date' } as any, { Date: 'string' })).toBe('string');
   expect(parseToTsType({ type: 'array', items: { type:'string' } })).toBe('string[]');
   expect(parseToTsType({ type: 'array', items: { $ref: '#/definitions/response.ExecDetailDRO' } })).toBe('ExecDetailDRO[]');
   expect(parseToTsType({ $ref: '#/definitions/response.ExecDetailDRO' })).toBe('ExecDetailDRO');
