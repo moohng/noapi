@@ -161,9 +161,9 @@ export interface GenerateApiResult {
   typeName?: string;
   /** abc.ts */
   fileName: string;
-  /** d:\zmn\noapi\src\api */
+  /** d:\workspaces\noapi\src\api */
   fileDir: string;
-  /** d:\zmn\noapi\src\api\abc.ts */
+  /** d:\workspaces\noapi\src\api\abc.ts */
   filePath: string;
 }
 
